@@ -1,4 +1,5 @@
 /* Core: icons, helpers, persisted state, derived data and the ask() pipeline. */
+const REMOTE_DOCS = new Map();
 const GLYPH = {
   search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
@@ -72,12 +73,13 @@ function seedGaps() { return []; }
 const SEED_DAYS = { ans: new Array(14).fill(0), gap: new Array(14).fill(0) };
 const SEED_TOP = {};
 
+const DEFAULT_SETTINGS = { threshold: 0.6, maxSources: 3, details: true, endpoint: '', useDemo: true, scripted: false, ai: false, semThr: 0.86 };
 let STATE = Object.assign({
   lang: 0, theme: 'system', onboarded: false,
   history: seedHistory(), gaps: seedGaps(), feedback: {}, removed: [], uploads: [], liveTop: {},
-  settings: { threshold: 0.6, maxSources: 3, details: true, endpoint: '', useDemo: true, scripted: false, ai: false, semThr: 0.86 },
+  settings: DEFAULT_SETTINGS,
 }, LS.get('altheia.state', {}));
-STATE.settings = Object.assign({ threshold: 0.6, maxSources: 3, details: true, endpoint: '', useDemo: true }, STATE.settings);
+STATE.settings = Object.assign({}, DEFAULT_SETTINGS, STATE.settings);
 function save() { return LS.set('altheia.state', STATE); }
 LANG = STATE.lang;
 
@@ -102,7 +104,7 @@ function allChunks() {
 function docById(id) {
   const d = DEMO_DOCS.find(x => x.id === id);
   if (d) return { id: d.id, name: d.name, type: d.type, size: d.size, ts: Date.now() - d.ago * DAY, pages: d.pages, sheets: d.sheets, rows: d.rows, demo: true, category: d.cat };
-  return STATE.uploads.find(u => u.id === id);
+  return REMOTE_DOCS.get(id) || STATE.uploads.find(u => u.id === id);
 }
 function chunkById(id) { return allChunks().find(c => c.id === id); }
 function rebuild() { INDEX = Retrieval.buildIndex(allChunks()); if (typeof Augment !== 'undefined' && STATE.settings.ai && Augment.ready()) Augment.indexChunks(allChunks(), LANG); }
@@ -110,6 +112,7 @@ function docChunks(id) { return allChunks().filter(c => c.doc === id); }
 
 function locLabel(loc) {
   if (!loc) return '';
+  if (loc.label) return loc.label;
   if (loc.page) return t('loc.page', loc.page);
   if (loc.sheet) return t('loc.sheet', loc.sheet, loc.rows);
   if (loc.section) return t('loc.section', loc.section);

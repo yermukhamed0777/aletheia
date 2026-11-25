@@ -1,10 +1,23 @@
 {
   "name": "aletheia",
+  "version": "0.1.0",
+  "description": "Evidence-first clinical evidence desk demo (EN/RU/KK) with cited, extractive answers",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yermukhamed0777/aletheia.git"
+  },
   "scripts": {
     "build": "node bundle.mjs",
     "check": "node check.mjs",
+    "lint": "node lint.mjs",
+    "eval": "node eval.mjs",
+    "verify": "node check.mjs && node lint.mjs && node eval.mjs && node bundle.mjs",
     "start": "node bundle.mjs && npx --yes serve dist"
   }
 }

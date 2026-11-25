@@ -326,9 +326,9 @@ const TEXT = {
     "Aletheia-ны зерттеу"
   ],
   "lp.nosignup": [
-    "No sign-up. Your sources stay in your browser.",
-    "Без регистрации. Ваши источники остаются в браузере.",
-    "Тіркеусіз. Дереккөздеріңіз браузерде қалады."
+    "No sign-up. By default, your sources stay in your browser.",
+    "Без регистрации. По умолчанию источники остаются в браузере.",
+    "Тіркеусіз. Әдепкі бойынша дереккөздеріңіз браузерде қалады."
   ],
   "lp.h1a": [
     "Answers from your protocols",
@@ -601,9 +601,9 @@ const TEXT = {
     "Браузеріңізде жұмыс істейді"
   ],
   "sec.local.d": [
-    "The demo sends no questions, sources or feedback to any server and loads no analytics.",
-    "Демо не отправляет вопросы, источники и отзывы на сервер и не загружает аналитику.",
-    "Демо сұрақтарды, дереккөздерді және пікірлерді серверге жібермейді, аналитиканы да жүктемейді."
+    "By default the demo sends no questions, sources or feedback to any server and loads no analytics. A backend you configure yourself can receive questions; optional models load from a CDN.",
+    "По умолчанию демо не отправляет вопросы, источники и отзывы на сервер и не загружает аналитику. Настроенный вами сервер может получать вопросы; дополнительные модели загружаются из CDN.",
+    "Әдепкі бойынша демо сұрақтарды, дереккөздерді және пікірлерді серверге жібермейді, аналитиканы да жүктемейді. Өзіңіз реттеген сервер сұрақтарды алуы мүмкін; қосымша үлгілер CDN-нен жүктеледі."
   ],
   "sec.upl": [
     "Uploads stay on your device",
@@ -1201,9 +1201,9 @@ const TEXT = {
     "Файлдарды мұнда тастаңыз немесе таңдау үшін басыңыз"
   ],
   "lib.formats": [
-    "PDF (text-based), DOCX, XLSX, CSV, TXT · up to 10 MB · parsed in your browser",
-    "PDF (с текстом), DOCX, XLSX, CSV, TXT · до 10 МБ · обработка в браузере",
-    "PDF (мәтінді), DOCX, XLSX, CSV, TXT · 10 МБ дейін · браузерде өңделеді"
+    "PDF (text-based), DOCX, XLSX, CSV, TXT · up to 30 MiB · parsed in your browser",
+    "PDF (с текстом), DOCX, XLSX, CSV, TXT · до 30 МиБ · обработка в браузере",
+    "PDF (мәтінді), DOCX, XLSX, CSV, TXT · 30 МиБ дейін · браузерде өңделеді"
   ],
   "lib.sample": [
     "Add sample source",
@@ -1211,9 +1211,9 @@ const TEXT = {
     "Үлгі дереккөз қосу"
   ],
   "lib.sample.d": [
-    "Adds a short TXT about cold-chain storage, processed like any upload, so you can close an open question in the demo.",
-    "Добавляет короткий TXT о хранении в холодной цепи; обрабатывается как обычная загрузка, чтобы закрыть открытый вопрос в демо.",
-    "Суық тізбекті сақтау туралы қысқа TXT қосады; демодағы ашық сұрақты жабу үшін қалыпты жүкте сияқты өңделеді."
+    "Adds a short TXT about paediatric dosing, processed like any upload, so you can close an open question in the demo.",
+    "Добавляет короткий TXT о педиатрических дозах; обрабатывается как обычная загрузка, чтобы закрыть открытый вопрос в демо.",
+    "Педиатриялық дозалау туралы қысқа TXT қосады; демодағы ашық сұрақты жабу үшін қалыпты жүкте сияқты өңделеді."
   ],
   "lib.search": [
     "Search sources…",
@@ -1331,9 +1331,9 @@ const TEXT = {
     "Файл бос."
   ],
   "err.toobig": [
-    "The file is larger than 10 MB.",
-    "Файл больше 10 МБ.",
-    "Файл 10 МБ-дан үлкен."
+    "The file is larger than 30 MiB.",
+    "Файл больше 30 МиБ.",
+    "Файл 30 МиБ-дан үлкен."
   ],
   "set.scripted": [
     "Scripted demo answers",
@@ -1941,9 +1941,9 @@ const TEXT = {
     "Бұл жинақ туралы"
   ],
   "set.about.d": [
-    "Static web app, no dependencies, no network calls. Retrieval: BM25 with an evidence-coverage threshold.",
-    "Статическое приложение без зависимостей и сетевых вызовов. Поиск: BM25 с порогом покрытия доказательствами.",
-    "Тәуелсіз, желіге сұрау жібермейтін статикалық қолданба. Іздеу: BM25, дәлелдермен қамту шегі бар."
+    "Static web app with no install step. BM25 retrieval with an evidence-coverage threshold; optional CDN models and a configured backend can make network calls.",
+    "Статическое приложение без шага установки. Поиск BM25 с порогом покрытия доказательствами; дополнительные модели из CDN и настроенный сервер могут обращаться к сети.",
+    "Орнату қадамы жоқ статикалық қолданба. BM25 іздеу, дәлелдермен қамту шегі бар; қосымша CDN үлгілері мен реттелген сервер желіге сұрау жіберуі мүмкін."
   ],
   "reset.title": [
     "Reset all local data?",
@@ -2092,28 +2092,28 @@ const TEXT = {
   ],
   "toast.copied": [
     "Answer copied",
-    "Answer copied",
-    "Answer copied"
+    "Ответ скопирован",
+    "Жауап көшірілді"
   ],
   "toast.citecopied": [
     "Citations copied",
-    "Citations copied",
-    "Citations copied"
+    "Ссылки скопированы",
+    "Дәйексөздер көшірілді"
   ],
   "toast.shared": [
     "Structured answer copied to clipboard",
-    "Structured answer copied to clipboard",
-    "Structured answer copied to clipboard"
+    "Структурированный ответ скопирован в буфер",
+    "Құрылымдық жауап буферге көшірілді"
   ],
   "toast.thanks": [
     "Thanks, feedback saved on this device",
-    "Thanks, feedback saved on this device",
-    "Thanks, feedback saved on this device"
+    "Спасибо, отзыв сохранён на этом устройстве",
+    "Рақмет, пікір осы құрылғыда сақталды"
   ],
   "toast.reported": [
     "Reported as incorrect and saved on this device",
-    "Reported as incorrect and saved on this device",
-    "Reported as incorrect and saved on this device"
+    "Помечено как неверное и сохранено на этом устройстве",
+    "Қате деп белгіленіп, осы құрылғыда сақталды"
   ],
   "toast.lang": [
     "Language: {0}",

@@ -4,5 +4,9 @@ dist/
 .env
 .env.local
 *.pem
+*.key
+*.pfx
+*.p12
+credentials*.json
 .vercel
 .env*

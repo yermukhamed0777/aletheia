@@ -53,7 +53,11 @@ async function remoteAsk(q) {
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const j = await res.json(), cites = Array.isArray(j.citations) ? j.citations : [];
   if (j.status === 'abstain' || !j.answer || !cites.length) return { kind: 'abstain', reason: 'remote', related: [], evidence: [], ms: j.ms || 0, scanned: j.scanned, coverage: 0, topic: 'general', qa: null, missing: [], remoteWhy: j.reason };
-  const evidence = cites.map((c, i) => ({ chunk: { id: 'r' + i, doc: 'r' + i, loc: {}, lines: [c.excerpt || ''], topic: 'remote', remote: c }, lines: [0] }));
+  const evidence = cites.map((c, i) => {
+    const id = 'remote-' + seq + '-' + i;
+    REMOTE_DOCS.set(id, { id, name: String(c.doc || t('prov.remote')), type: 'txt', size: 0, ts: Date.now() });
+    return { chunk: { id, doc: id, loc: { label: c.location || '' }, lines: [c.excerpt || ''], topic: 'remote', remote: c }, lines: [0] };
+  });
   return { kind: 'remote', direct: j.answer, details: j.details || [], evidence, strength: j.strength || 'moderate', ms: j.ms || 0, scanned: j.scanned, coverage: j.coverage ?? 1, topic: 'general' };
 }
 async function ask(q, qaId) {

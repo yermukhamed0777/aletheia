@@ -29,19 +29,21 @@ npm run check            # pass/fail smoke test over the built bundle
 - Before a pull request: run `node bundle.mjs && node check.mjs` and paste the output. The same check runs in CI on every push to `main` and on every pull request (`.github/workflows/check.yml`).
 - Keep `dist/index.html` generated; never commit hand-edits to it.
 - Vercel project: `erm1ham3d2204-2491/aletheia`. It builds `main` from `vercel.json` and creates preview deployments for pull requests. Production URL: https://aletheia-nine-iota.vercel.app.
+- Long-term execution plan and session log: [`plan/README.md`](plan/README.md) — strategy, roadmap, backlog, decisions, progress. Every work session updates the plan in the same commit.
+- Public-repo files: [`LICENSE`](LICENSE) (all rights reserved), [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES), [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Honest status: what is real and what is simulated
 
 | Part | Status |
 |---|---|
-| Upload + parsing of TXT, CSV, DOCX, XLSX (own ZIP reader) and text-based PDF | **Real**, client-side. Scans and odd-font PDFs are reported as *Failed*, with the reason. |
+| Upload + parsing of TXT, CSV, DOCX, XLSX (own ZIP reader) and text-based PDF | **Real**, client-side, up to 30 MiB per file. Scans and odd-font PDFs are reported as *Failed*, with the reason. |
 | Passage splitting with page / sheet+rows / section / line locations | **Real**. Locations come from the file; nothing is invented. |
 | Retrieval: BM25 over passages, cross-language stemming | **Real** (lexical, not embeddings). |
 | Evidence validation + abstention | **Real**: idf-weighted share of question terms covered by the best passages must reach the threshold (Configuration, default 60%), otherwise the desk abstains. |
 | Free-text answers | **Extractive**: lines copied from retrieved passages. No generated prose. |
 | 39 curated demo questions (34 answerable, 5 deliberately unanswerable) | **Pre-verified** against the demo passages; labelled as such in the UI. |
 | LLM generation, embeddings, pgvector | **Not connected.** The UI is labelled “Guided retrieval demo”. |
-| Analytics | Built only from live session activity; no fabricated sample history. |
+| Analytics | Built only from activity recorded in this browser (persisted in `localStorage`); no fabricated sample history. |
 | Accounts, access control, encryption at rest, audit log | Not implemented, not claimed. |
 
 ## Architecture
@@ -89,5 +91,5 @@ Question sets live in `validation/` (the source PDFs used during earlier tuning 
 
 - Lexical retrieval misses pure synonyms without semantic mode (e.g. “how much” vs “price”).
 - PDF extraction handles simple text streams only; scans need OCR.
-- Uploaded data persists in `localStorage` (≈5 MB limit).
+- Uploaded data persists in `localStorage` (browser quota ≈5 MB); the enforced per-file upload cap is 30 MiB, so a very large file's extracted text may exceed the quota.
 - This is a demonstration, not a medical device. No answer should be used for patient care without checking the cited source.
