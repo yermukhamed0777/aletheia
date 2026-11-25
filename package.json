@@ -1,0 +1,10 @@
+{
+  "name": "aletheia",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node bundle.mjs",
+    "check": "node check.mjs",
+    "start": "node bundle.mjs && npx --yes serve dist"
+  }
+}

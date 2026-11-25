@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node check.mjs 1>&2 || exit 2" }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": ["Read(./.env)", "Read(./.env.local)"]
+  }
+}
