@@ -19,6 +19,13 @@ Deploy: `dist/` is static. On Vercel/Netlify/Cloudflare Pages set build command 
 npm run check            # pass/fail smoke test over the built bundle
 ```
 
+## Development
+
+- Repository: `https://github.com/yermukhamed0777/aletheia` (public), default branch `main`.
+- Before a pull request: run `node bundle.mjs && node check.mjs` and paste the output. The same check runs in CI on every push to `main` and on every pull request (`.github/workflows/check.yml`).
+- Keep `dist/index.html` generated; never commit hand-edits to it.
+- Vercel builds `main` from `vercel.json` and creates preview deployments for pull requests.
+
 ## Honest status: what is real and what is simulated
 
 | Part | Status |
