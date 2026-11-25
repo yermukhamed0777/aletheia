@@ -1,5 +1,9 @@
 # Aletheia — Verified answers from your protocols
 
+[![check](https://github.com/yermukhamed0777/aletheia/actions/workflows/check.yml/badge.svg)](https://github.com/yermukhamed0777/aletheia/actions/workflows/check.yml)
+
+**Live demo:** https://aletheia-nine-iota.vercel.app
+
 **Aletheia** (Ἀλήθεια, ancient Greek for *truth / disclosure*) is an evidence-first desk for diagnostic networks, hospital pharmacies and laboratory teams. Staff ask a question in plain language; the desk returns a short answer, the exact highlighted passage, and the file and location it came from — or an honest **“I could not verify this”**.
 
 Trilingual throughout: **English / Русский / Қазақша** — interface, demo corpus and demo answers.
@@ -24,7 +28,7 @@ npm run check            # pass/fail smoke test over the built bundle
 - Repository: `https://github.com/yermukhamed0777/aletheia` (public), default branch `main`.
 - Before a pull request: run `node bundle.mjs && node check.mjs` and paste the output. The same check runs in CI on every push to `main` and on every pull request (`.github/workflows/check.yml`).
 - Keep `dist/index.html` generated; never commit hand-edits to it.
-- Vercel builds `main` from `vercel.json` and creates preview deployments for pull requests.
+- Vercel project: `erm1ham3d2204-2491/aletheia`. It builds `main` from `vercel.json` and creates preview deployments for pull requests. Production URL: https://aletheia-nine-iota.vercel.app.
 
 ## Honest status: what is real and what is simulated
 
