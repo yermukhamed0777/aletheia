@@ -36,10 +36,14 @@ jobs:
         run: node eval.mjs
       - name: Fast unit harness
         run: node unit.mjs
+      - name: Data-layer parsers (synthetic fixtures)
+        run: node data.mjs
       - name: Build static bundle
         run: node bundle.mjs
       - name: Browser smoke (root + subpath)
         run: node e2e.mjs
+      - name: Workflow QA (mobile, keyboard, persistence)
+        run: node qa.mjs
       - name: Upload built site
         uses: actions/upload-artifact@v4
         with:

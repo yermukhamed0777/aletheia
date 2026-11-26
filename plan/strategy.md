@@ -49,6 +49,11 @@ not a medical device. Differentiators that must survive every future change:
 | Built bundle | 2638 KB, deterministic SHA-256 `4F587DD38B7885D0F164237D7CCF8160E5FAAB0EACD7288EEF95B015AF7D0642` across two rebuilds | `Get-FileHash dist/index.html` + `node bundle.mjs` |
 | Unit harness | 39/39 checks passed (was 21/39 before the fixes) | `node unit.mjs` |
 | Browser e2e | 13/13 checks passed, root + `/sub/`, zero console errors, zero external requests | `node e2e.mjs` |
+| Data layer | 19/19 checks: TXT, CSV, DOCX, XLSX, text-PDF and two failure codes | `node data.mjs` |
+| Workflow QA | 23/23 checks: mobile, keyboard/a11y, hostile input, network failure, persistence, empty states | `node qa.mjs` |
+| Demo capture | 6 screenshots + integer-only event snapshot; identical SHA-256 across two runs | `node demo.mjs` |
+| Dependency audit | 0 vulnerabilities across 3 packages | `npm.cmd audit --json` |
+| Production | deployment `dpl_DXQx…`, READY, commit `9ca85e9…` | `vercel ls --prod --json` |
 | Validation | 50/72 correct (69.4%): dev 19/30, fresh 16/20, heldout1 15/22 | `node eval.mjs` |
 | CI | Two previous runs `success`; post-push run 45753969933 failed at lint (CRLF/LF vendor hashes) and was fixed; a new run must pass | `gh run list` + `gh run view --log-failed` |
 | Repo | `yermukhamed0777/aletheia`, public | `gh repo view ... --json visibility` |

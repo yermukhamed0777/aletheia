@@ -243,10 +243,10 @@ function xlDate(v) { const d = new Date(Math.round((+v - 25569) * 864e5)); if (i
 async function parseXlsx(buf) {
   const z = await unzip(buf); if (!z['xl/workbook.xml']) throw new Error('xlsx');
   const rd = async n => z[n] ? await z[n]() : '';
-  const ss = [...(await rd('xl/sharedStrings.xml')).matchAll(/<si>([\s\VIEW]*?)<\/si>/g)].map(x => xmlText(x[1].replace(/<rPh[\s\VIEW]*?<\/rPh>/g, '')));
+  const ss = [...(await rd('xl/sharedStrings.xml')).matchAll(/<si>([\s\S]*?)<\/si>/g)].map(x => xmlText(x[1].replace(/<rPh[\s\S]*?<\/rPh>/g, '')));
   // date styles
   const sty = await rd('xl/styles.xml'), custom = {}; [...sty.matchAll(/<numFmt [^>]*numFmtId="(\d+)"[^>]*formatCode="([^"]*)"/g)].forEach(m => custom[m[1]] = xmlText(m[2]));
-  const xfBlock = (sty.match(/<cellXfs[^>]*>([\s\VIEW]*?)<\/cellXfs>/) || [])[1] || '';
+  const xfBlock = (sty.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/) || [])[1] || '';
   const dateXf = [...xfBlock.matchAll(/<xf [^>]*?numFmtId="(\d+)"/g)].map(m => { const id = +m[1]; if ((id >= 14 && id <= 22) || (id >= 45 && id <= 47)) return true; const f = custom[id]; return !!f && /[dmyh]/i.test(f.replace(/"[^"]*"|\[[^\]]*\]|\\./g, '')); });
   // sheets by relationship id
   const wb = await rd('xl/workbook.xml'), rels = {};
@@ -255,9 +255,9 @@ async function parseXlsx(buf) {
   let chunks = [], total = 0;
   for (const sh of sheets) {
     const xml = await rd(sh.path); if (!xml) continue; const grid = new Map(); // rowNum -> cells[]
-    for (const r of xml.matchAll(/<row ([^>]*?)(?:\/>|>([\s\VIEW]*?)<\/row>)/g)) {
+    for (const r of xml.matchAll(/<row ([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g)) {
       const rn = +((r[1].match(/\br="(\d+)"/) || [])[1] || 0) || grid.size + 1, cells = grid.get(rn) || [];
-      for (const c of (r[2] || '').matchAll(/<c ([^>]*?)(?:\/>|>([\s\VIEW]*?)<\/c>)/g)) {
+      for (const c of (r[2] || '').matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
         const ref = (c[1].match(/\br="([A-Z]+)/) || [])[1] || 'A', col = colIdx(ref), tp = (c[1].match(/\bt="(\w+)"/) || [])[1], st = +((c[1].match(/\bs="(\d+)"/) || [])[1] || 0), body = c[2] || '';
         let val = ''; const v = (body.match(/<v>([^<]*)/) || [])[1];
         if (tp === 's') val = ss[+v] ?? ''; else if (tp === 'inlineStr') val = xmlText(body); else if (tp === 'b') val = v === '1' ? 'TRUE' : 'FALSE'; else if (tp === 'e') val = ''; else if (tp === 'str') val = xmlText(v || '');
@@ -317,7 +317,7 @@ async function extractPDF(buf) {
       if (/ASCII85Decode/.test(m[1])) data = a85(raw); else data = Uint8Array.from(raw, c => c.charCodeAt(0));
       txt = /FlateDecode/.test(m[1]) ? new TextDecoder('latin1').decode(await inflate(data, false)) : new TextDecoder('latin1').decode(data);
     } catch { continue; }
-    if (!/BT[\s\VIEW]*ET/.test(txt)) continue;
+    if (!/BT[\s\S]*ET/.test(txt)) continue;
     const parts = []; const rx = /\[((?:[^\]\\]|\\.)*)\]\s*TJ|\(((?:[^()\\]|\\.)*)\)\s*(?:Tj|'|")|(TEXT\*|\sT[dD]\s)/g; let k;
     const unesc = x => x.replace(/\\([nrtbf()\\]|[0-7]{1,3})/g, (_, g) => ({ n: '\n', r: '', t: ' ', b: '', f: '', '(': '(', ')': ')', '\\': '\\' }[g] ?? String.fromCharCode(parseInt(g, 8))));
     while ((k = rx.exec(txt))) { if (k[1] != null) parts.push([...k[1].matchAll(/\(((?:[^()\\]|\\.)*)\)|(-?\d+\.?\d*)/g)].map(z => z[1] != null ? unesc(z[1]) : (+z[2] < -200 ? ' ' : '')).join('')); else if (k[2] != null) parts.push(unesc(k[2])); else parts.push('\n'); }
@@ -334,7 +334,7 @@ async function extractFile(file, type) {
   if (type === 'docx') {
     const z = await unzip(await file.arrayBuffer()); if (!z['word/document.xml']) throw new Error('docx');
     const xml = await z['word/document.xml']();
-    const paras = [...xml.matchAll(/<w:p[ >][\s\VIEW]*?<\/w:p>/g)].map(p => xmlText(p[0].replace(/<w:tab\/>/g, ' ').replace(/<\/w:t>/g, '</w:t> '))).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const paras = [...xml.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)].map(p => xmlText(p[0].replace(/<w:tab\/>/g, ' ').replace(/<\/w:t>/g, '</w:t> '))).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
     return { chunks: textChunks(paras, 'para'), info: {} };
   }
   if (type === 'xlsx') return parseXlsx(await file.arrayBuffer());

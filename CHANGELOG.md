@@ -4,6 +4,11 @@ Dates are UTC, taken from `git log --format='%h %ad %s' --date=short`.
 
 ## Unreleased
 
+- **P0-13 (release closeout)** Fixed six corrupted `[\s\VIEW]` regexes in
+  `src/model.js` that silently broke DOCX, XLSX and text-PDF parsing — capabilities
+  the README claimed worked. Added `data.mjs` (19 synthetic-fixture checks),
+  `qa.mjs` (23 workflow checks) and `demo.mjs` (deterministic capture with a
+  frozen clock); all wired into `check.mjs`, `verify.cmd` and CI.
 - **P0-10** Completed the interrupted state/analytics refactor in the working
   tree: restored `sleep`, removed dangling `REMOTE_DOCS`/seed globals, fixed
   `VIEW.tourSession`, and replaced fabricated seed analytics with real history.

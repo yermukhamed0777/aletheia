@@ -8,7 +8,7 @@ commands and results go in `plan/progress.md`.
 
 | Horizon | ID range | Meaning |
 |---|---|---|
-| Short term | P0-1 … P0-12 | Assistant can do next; one session each. |
+| Short term | P0-1 … P0-13 | Assistant can do next; one session each. |
 | Short term (quality) | P1-1 … P1-3 | Small measured improvements after P0. |
 | Midterm | M1-1 … M2-3 | Real validation, team and product readiness. |
 | Long term | M3-1 … M3-4 | Product shape, posture and commercial model. |
@@ -83,6 +83,16 @@ commands and results go in `plan/progress.md`.
 - **P0-12 — CV-ready documentation.** New. **Done 2026-11-26:** README verify
   and backup/restore sections, `WALKTHROUGH.md`, `PILOT_HANDOFF.md`, updated
   CONTRIBUTING/CHANGELOG/THIRD_PARTY_NOTICES.
+
+- **P0-13 — Release closeout: verify parser claims and workflows.** New.
+  **Done 2026-11-26:** six `[\s\VIEW]` regexes in `src/model.js` were a hidden
+  P0 — DOCX, XLSX and text-PDF uploads silently failed with `nochunks`/`pdftext`
+  while README claimed they worked. Fixed to `[\s\S]` and guarded in lint.
+  Added `data.mjs` (19 synthetic-fixture checks), `qa.mjs` (23 workflow checks:
+  mobile, keyboard/a11y, hostile input, network failure, persistence, empty
+  states) and `demo.mjs` (6 deterministic screenshots + integer-only event
+  snapshot). Wired into `check.mjs`, `verify.cmd` and CI. Before: 9 passing /
+  10 failing data checks; after: 19/19.
 
 ## P1 — measured quality
 

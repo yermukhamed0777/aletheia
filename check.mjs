@@ -82,6 +82,14 @@ if (unit.status !== 0) {
   problems.push('unit.mjs exited ' + unit.status);
 }
 
+// 7. Data-layer harness: real parsers over synthetic, non-sensitive fixtures.
+const data = spawnSync(process.execPath, ['data.mjs'], { encoding: 'utf8' });
+process.stdout.write(data.stdout || '');
+if (data.status !== 0) {
+  process.stderr.write(data.stderr || '');
+  problems.push('data.mjs exited ' + data.status);
+}
+
 if (problems.length) {
   console.error('CHECK FAILED (' + problems.length + ')');
   for (const p of problems) console.error(' - ' + p);

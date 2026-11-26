@@ -18,7 +18,10 @@
     "lint": "node lint.mjs",
     "eval": "node eval.mjs",
     "unit": "node unit.mjs",
+    "data": "node data.mjs",
     "e2e": "node e2e.mjs",
+    "qa": "node qa.mjs",
+    "demo": "node demo.mjs",
     "verify": "node check.mjs && node lint.mjs && node eval.mjs && node bundle.mjs && node e2e.mjs",
     "start": "node bundle.mjs && npx --yes serve dist"
   },

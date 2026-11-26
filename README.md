@@ -30,7 +30,10 @@ node check.mjs           # smoke check; also runs the unit harness
 node lint.mjs            # conventions, view copy, pinned vendor hashes
 node eval.mjs            # regression score on the indicative validation sets
 node unit.mjs            # fast pure-rule + boot tests (no browser)
+node data.mjs            # real parsers over synthetic, non-sensitive fixtures
 node e2e.mjs             # Chromium smoke: ask -> citation, root + subpath
+node qa.mjs              # mobile, keyboard, hostile input, network, persistence
+node demo.mjs            # deterministic screenshots from the synthetic corpus
 npm ci                   # install the dev-only Playwright dependency
 .\verify.cmd             # Windows: all of the above in sequence
 ```
@@ -69,7 +72,7 @@ files are not stored, so a backup does not restore the source documents.
 
 | Part | Status |
 |---|---|
-| Upload + parsing of TXT, CSV, DOCX, XLSX (own ZIP reader) and text-based PDF | **Real**, client-side, up to 30 MiB per file. Scans and odd-font PDFs are reported as *Failed*, with the reason. |
+| Upload + parsing of TXT, CSV, DOCX, XLSX (own ZIP reader) and text-based PDF | **Real**, client-side, up to 30 MiB per file. Verified by `node data.mjs` with synthetic fixtures; scans and odd-font PDFs are reported as *Failed*, with the reason. |
 | Passage splitting with page / sheet+rows / section / line locations | **Real**. Locations come from the file; nothing is invented. |
 | Retrieval: BM25 over passages, cross-language stemming | **Real** (lexical, not embeddings). |
 | Evidence validation + abstention | **Real**: idf-weighted share of question terms covered by the best passages must reach the threshold (Configuration, default 60%), otherwise the desk abstains. |
@@ -95,7 +98,8 @@ files are not stored, so a backup does not restore the source documents.
 | `src/strings.js` | 436 interface strings × 3 languages. |
 | `src/theme.css` | Light/dark theme, layout, responsive rules. |
 | `harness.mjs`, `unit.mjs` | VM boot harness and fast pure-rule regression tests. |
-| `e2e.mjs` | Playwright browser smoke test and deterministic capture. |
+| `data.mjs` | Synthetic TXT/CSV/DOCX/XLSX/PDF fixtures through the real parsers. |
+| `e2e.mjs`, `qa.mjs`, `demo.mjs` | Browser smoke, workflow QA (mobile/keyboard/persistence) and deterministic capture. |
 
 Why no framework: a zero-dependency static bundle opens instantly on a ward workstation, is trivial to host behind an intranet, and keeps the retriever portable (it can move server-side unchanged).
 
@@ -123,7 +127,7 @@ The same story is built into the app: sidebar → **Guided demo** runs it: probl
 
 ## Validation
 
-Question sets live in `validation/` (the source PDFs used during earlier tuning were third-party and are not included). Ground truth was read independently from the documents. The sets cover answerable paraphrases and deliberately unanswerable questions; treat the small samples as indicative, not as a benchmark. `node eval.mjs` is a regression floor (currently 0.694), not a quality target. Rules that cannot be driven through a UI — URL validation, state hydration, remote-citation rendering, quota handling, content-free counters — are covered by `node unit.mjs`; the rendered app is covered by `node e2e.mjs`.
+Question sets live in `validation/` (the source PDFs used during earlier tuning were third-party and are not included). Ground truth was read independently from the documents. The sets cover answerable paraphrases and deliberately unanswerable questions; treat the small samples as indicative, not as a benchmark. `node eval.mjs` is a regression floor (currently 0.694), not a quality target. Rules that cannot be driven through a UI — URL validation, state hydration, remote-citation rendering, quota handling, content-free counters — are covered by `node unit.mjs`; parser claims are covered by `node data.mjs`; the rendered app is covered by `node e2e.mjs` and `node qa.mjs`. The reproducible demonstration and release evidence are in [`RELEASE_REPORT.md`](RELEASE_REPORT.md) and `node demo.mjs`.
 
 ## Known limitations
 

@@ -16,10 +16,13 @@ node check.mjs           # smoke check; also runs unit.mjs
 node lint.mjs            # syntax/convention lint + pinned vendor hashes
 node eval.mjs            # score validation sets against the retriever
 node unit.mjs            # fast pure-rule and boot regressions
+node data.mjs            # synthetic parser fixtures (no sensitive data)
 node e2e.mjs             # Chromium smoke, root + subpath
+node qa.mjs              # mobile, keyboard, hostile input, network, persistence
+node demo.mjs            # deterministic screenshots + content-free event snapshot
 ```
 
-Use `.\verify.cmd` on Windows to run all six commands in sequence.
+Use `.\verify.cmd` on Windows to run all eight commands in sequence.
 
 On Windows with PowerShell `ExecutionPolicy = Restricted`, `npm`/`npx`
 resolve to `.ps1` shims that are blocked. Use `node <script>` directly, or the

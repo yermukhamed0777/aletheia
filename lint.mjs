@@ -16,6 +16,7 @@ for (const f of files) {
   catch (e) { problems.push('syntax error in src/' + f + ': ' + e.message); }
   ok(bundle.includes(f), 'src/' + f + ' is not referenced in bundle.mjs');
   ok(!/^\s*(?:import|export)\s/m.test(source), 'src/' + f + ' must be a plain global script (no import/export)');
+  ok(!source.includes('[\\s\\VIEW]'), 'corrupted any-character regex [\\s\\VIEW] in src/' + f);
 }
 
 // Generated output must be ignored, and no secret-shaped file may be tracked.

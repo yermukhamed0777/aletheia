@@ -195,3 +195,49 @@ run must pass before the release can proceed.
 **Conclusion:** the release gate worked — the first red run stopped the
 release, the cross-platform fix was applied, and the second run is green with
 the new build deployed. No user, usage or revenue data was measured.
+
+## 2026-11-26 — engineering closeout (current)
+
+**Starting state:** clean tree, local HEAD = `origin/main` =
+`9ca85e98a038372715acdb481162698e368cd6a6`; no PRs; last CI run `45754459287`
+success. Production deployment `dpl_DXQxs41c5qaAu3Ji8zG6beVtRzbP` (READY)
+reports `githubCommitSha` `9ca85e9…` via `vercel ls --prod --json`.
+
+**Baseline (before changes):** `.\verify.cmd` → UNIT 39/39, CHECK passed
+(39 questions / 22 passages / 334 used of 436 strings), LINT passed (10
+sources, 2 vendor hashes), EVAL 50/72 (69.4%), bundle 2638 KB, E2E 13/13.
+`npm.cmd audit --json` → 0 vulnerabilities, 3 packages. Tracked-file secret
+scan → no matches; `.env.local` is ignored. These passed but the suite did not
+exercise real DOCX/XLSX/PDF parsing.
+
+**Defect found (P0-13):** six regexes in `src/model.js` used `[\\s\\VIEW]`
+instead of `[\\s\\S]`. `node data.mjs` with synthetic fixtures showed DOCX and
+XLSX failing `nochunks` and text-PDF failing `pdftext`; before the fix the
+suite reported `DATA FAILED — 9 passed, 10 failed`. This contradicted the
+README's documented upload capability. Fixed all six occurrences; `lint.mjs`
+now rejects the corrupted pattern.
+
+**Changed:** `src/model.js` regex fix; new `data.mjs`, `qa.mjs`, `demo.mjs`;
+`check.mjs` runs `data.mjs`; `lint.mjs` guards the regex; `verify.cmd`, CI,
+`package.json` and README/CONTRIBUTING/SECURITY/CHANGELOG updated; plan docs
+updated; `RELEASE_REPORT.md` added.
+
+**Final verification commands and exact results (2026-11-26):**
+- `node data.mjs` → `DATA PASSED — 19 passed, 0 failed` (TXT, CSV, DOCX, XLSX,
+  text-PDF, empty/unsupported failure codes, five sources indexed).
+- `node qa.mjs` → `QA PASSED — 23 passed, 0 failed` (mobile overflow/drawer,
+  ArrowDown + aria-activedescendant, gap-tab arrow keys, empty/long/hostile
+  input, network-failure callout, persistence across reload, four empty states).
+- `node demo.mjs` twice → `DEMO PASSED — 6 screenshots + content-free event
+  snapshot`; `events.json` `{"ask_started":1,"answer_shown":1,"citation_opened":1}`;
+  all seven artifact SHA-256 values identical across both runs after freezing
+  the browser clock.
+- `.\verify.cmd` → UNIT 39/39, DATA 19/19, CHECK passed (334/436 keys), LINT
+  passed (10 sources, regex guard, 2 vendor hashes), EVAL 50/72 (69.4%),
+  `built 2638 KB`, E2E 13/13, QA 23/23; exit 0.
+- `npm.cmd audit --json` → `"total": 0` for all severities; 3 packages.
+
+**Open:** no known P0 defects. Human-only work remains the pilot and product
+decisions (`PILOT_HANDOFF.md`); optional next: P1-1 accuracy floor, M1-1 audit
+CSV, M2-3 Windows CI, and the remaining accessibility/licence decisions.
+This closeout is **DEMO READY**, not a clinically validated release.
