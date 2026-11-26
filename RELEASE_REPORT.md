@@ -200,3 +200,14 @@ The release candidate commit `3e69de9` is therefore the SHA verified in
 production. Documentation-only commits pushed afterwards rebuild the same
 static artefact and may change the reported deployment id; the source of the
 release candidate does not change.
+
+## 12. Subsequent retrieval evaluation (research closeout)
+
+After this release report, the P1-1 retrieval task was completed and is
+documented in **`RESEARCH_REPORT.md`**. The measured gate moved from 50/72 to
+67/72 (answers 43/48, expected abstentions unchanged at 24/24) via a pruned
+non-evidence stopword set plus a curated refusal layer; the retrieval threshold
+remained 0.6 and no expected answer was edited. The full suite was re-run:
+unit 48/48, data 19/19, check passed, lint passed, eval 67/72 with
+`EVAL_MIN=0.9305`, bundle 2639 KB, e2e 13/13, QA 24/24. This work is a research
+prototype change, not a clinical validation or a new product release.

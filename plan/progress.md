@@ -275,3 +275,8 @@ CHANGELOG/plan records.
 in `RESEARCH_REPORT.md`; the Kazakh hold-out answerable score is unchanged at
 5/10. Human-only items and optional next work remain as above. No clinical
 validation or real-user result is claimed.
+
+**Docs follow-up:** README and `RELEASE_REPORT.md` reconciled with the measured
+67/72 result and the research report; no source or test file changed in that
+commit. `.\verify.cmd` re-run before the commit → UNIT 48/48, DATA 19/19,
+EVAL 67/72 at minimum 0.9305, E2E 13/13, QA 24/24.

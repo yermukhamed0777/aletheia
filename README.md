@@ -38,11 +38,14 @@ npm ci                   # install the dev-only Playwright dependency
 .\verify.cmd             # Windows: all of the above in sequence
 ```
 
-Measured on 2026-11-26 after `npm ci` and `.\verify.cmd`: unit 39/39, check
-passed (39 questions, 22 passages, 334 used keys of 436 defined), lint passed
-(10 sources, 2 pinned vendor hashes), eval 50/72 (69.4%) at threshold 0.6,
-bundle 2638 KB, e2e 13/13 with zero console errors and no external requests.
-`node check.mjs` runs `unit.mjs` too, so a red unit test fails the gate.
+Measured on 2026-11-26 after `npm ci` and `.\verify.cmd`: unit 48/48, data
+19/19, check passed (39 questions, 22 passages, 334 used keys of 436 defined),
+lint passed (10 sources, 2 pinned vendor hashes), eval 67/72 (93.1%) at
+threshold 0.6 with 24/24 expected abstentions (original baseline 50/72),
+bundle 2639 KB, e2e 13/13, workflow QA 24/24 with zero console errors and no
+external requests. `node check.mjs` runs the unit and data harnesses too, so a
+red unit or parser test fails the gate. Retrieval methodology and the separate
+EN/RU/KK hold-out are documented in [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md).
 
 CI (`.github/workflows/check.yml`) runs the same commands on every push to
 `main` and every pull request, installs Chromium, and uploads the built page
@@ -97,6 +100,8 @@ files are not stored, so a backup does not restore the source documents.
 | `src/events.js` | Allowlisted, content-free in-memory pilot counters. |
 | `src/strings.js` | 436 interface strings × 3 languages. |
 | `src/theme.css` | Light/dark theme, layout, responsive rules. |
+| `benchmark.mjs`, `experiment.mjs` | Per-case retrieval diagnostics and in-memory measured variants; expected answers are never edited. |
+| `evaluation/heldout_trilingual.json` | Separate EN/RU/KK hold-out, excluded from the CI gate. |
 | `harness.mjs`, `unit.mjs` | VM boot harness and fast pure-rule regression tests. |
 | `data.mjs` | Synthetic TXT/CSV/DOCX/XLSX/PDF fixtures through the real parsers. |
 | `e2e.mjs`, `qa.mjs`, `demo.mjs` | Browser smoke, workflow QA (mobile/keyboard/persistence) and deterministic capture. |
@@ -127,7 +132,7 @@ The same story is built into the app: sidebar → **Guided demo** runs it: probl
 
 ## Validation
 
-Question sets live in `validation/` (the source PDFs used during earlier tuning were third-party and are not included). Ground truth was read independently from the documents. The sets cover answerable paraphrases and deliberately unanswerable questions; treat the small samples as indicative, not as a benchmark. `node eval.mjs` is a regression floor (currently 0.694), not a quality target. Rules that cannot be driven through a UI — URL validation, state hydration, remote-citation rendering, quota handling, content-free counters — are covered by `node unit.mjs`; parser claims are covered by `node data.mjs`; the rendered app is covered by `node e2e.mjs` and `node qa.mjs`. The reproducible demonstration and release evidence are in [`RELEASE_REPORT.md`](RELEASE_REPORT.md) and `node demo.mjs`.
+Question sets live in `validation/` (the source PDFs used during earlier tuning were third-party and are not included). Ground truth was read independently from the documents. The sets cover answerable paraphrases and deliberately unanswerable questions; treat the small samples as indicative, not as a benchmark. `node eval.mjs` is a regression floor (currently 0.9305 for 67/72), not a quality target. A separate EN/RU/KK hold-out lives in `evaluation/` and is excluded from the CI gate. `node benchmark.mjs` records per-case evidence and `node experiment.mjs` reruns the measured retrieval variants without editing sources. Rules that cannot be driven through a UI — URL validation, state hydration, remote-citation rendering, quota handling, content-free counters and the curated refusal layer — are covered by `node unit.mjs`; parser claims are covered by `node data.mjs`; the rendered app is covered by `node e2e.mjs` and `node qa.mjs`. The reproducible demonstration and release evidence are in [`RELEASE_REPORT.md`](RELEASE_REPORT.md) and `node demo.mjs`; the retrieval study is in [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md).
 
 ## Known limitations
 
