@@ -164,3 +164,34 @@ same values and the normalisation rule.
 parsed, bundle order, tracked-file, view-copy, legacy-global and 2 pinned vendor
 hashes verified`; `.\verify.cmd` re-run with all six commands exit 0. A new CI
 run must pass before the release can proceed.
+
+## 2026-11-26 — CI and deployment outcomes
+
+**Commands and exact results:**
+- `git push origin main` → `605da26..5e784b2  main -> main` (first push; a
+  `git-credential-manager.exe` store warning was non-fatal).
+- `gh run list --repo yermukhamed0777/aletheia --limit 5` → run
+  `45753969933` `in_progress`; `gh run view … --log-failed` → `LINT FAILED (2)`
+  with the two vendor hash lines quoted above, job `139688110819`, exit 1.
+- After commit `2a90b4d`, `git push origin main` → `5e784b2..2a90b4d  main -> main`.
+- `gh run list --limit 3` → run `45754222575` `in_progress`.
+- `gh run view 45754222575` → `✓ main check · 45754222575`, job
+  `139688923812` `✓ Check, lint, eval, build in 30s`, artifact `aletheia-dist`
+  uploaded. Note: the `gh run watch` poll returned one transient `HTTP 502`;
+  a direct `gh run view` confirmed success. Annotation only: actions/checkout,
+  setup-node and upload-artifact v4 target Node 20 and are forced to Node 24.
+- `curl.exe -sSI --max-time 20 https://aletheia-nine-iota.vercel.app/` →
+  `HTTP/1.1 200 OK`, `Content-Length: 2743595`, `Last-Modified: Thu, 26 Nov 2026 04:17:09 GMT`,
+  `Etag: "4dc8f3040a9b6eff5cb3f5e46309cbdb"`, and all three security headers.
+  The previous production build was `Last-Modified: Wed, 25 Nov 2026 10:29:42 GMT`,
+  so the new code is live.
+- Downloaded the live page and compared it with local `dist/index.html`: raw
+  hashes differ (`43E805…` live vs `4F587D…` local) because Linux embeds the
+  LF-normalised pdf.js blobs while Windows embeds CRLF. After normalising the
+  two base64 vendor blobs to LF, the documents are byte-identical
+  (`equal after vendor LF normalisation: true`), canonical SHA-256
+  `43e8055218c593000cc1a87526cdb283f956d67316010dd412b7222572a96659`.
+
+**Conclusion:** the release gate worked — the first red run stopped the
+release, the cross-platform fix was applied, and the second run is green with
+the new build deployed. No user, usage or revenue data was measured.
