@@ -50,7 +50,7 @@ not a medical device. Differentiators that must survive every future change:
 | Unit harness | 39/39 checks passed (was 21/39 before the fixes) | `node unit.mjs` |
 | Browser e2e | 13/13 checks passed, root + `/sub/`, zero console errors, zero external requests | `node e2e.mjs` |
 | Validation | 50/72 correct (69.4%): dev 19/30, fresh 16/20, heldout1 15/22 | `node eval.mjs` |
-| CI | Two runs on `main`, both `success` | `gh run list --repo yermukhamed0777/aletheia` |
+| CI | Two previous runs `success`; post-push run 45753969933 failed at lint (CRLF/LF vendor hashes) and was fixed; a new run must pass | `gh run list` + `gh run view --log-failed` |
 | Repo | `yermukhamed0777/aletheia`, public | `gh repo view ... --json visibility` |
 
 ## Metrics that matter next

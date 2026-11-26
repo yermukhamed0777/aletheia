@@ -21,3 +21,5 @@ direction, scope or cost.
 | 2026-11-26 | Make pilot counters integer-only and allowlisted, with no text, persistence or network. | The validation plan needs counts but must not become a channel for clinical questions or account data; integer assertions are mechanically verifiable in `unit.mjs`. |
 | 2026-11-26 | Pin the two vendored pdf.js SHA-256 hashes in lint. | The zero-dependency build is only as trustworthy as the vendored blobs; a silent upgrade should be a reviewable change. |
 | 2026-11-26 | Leave licence, visibility, push and deploy unchanged. | Public commitments were explicitly reserved for the maintainer; a live header check was read-only. |
+| 2026-11-26 | Hash LF-normalised vendor bytes in lint instead of raw checkout bytes. | CI run 45753969933 failed because Windows checks out CRLF and Linux checks out LF; canonical LF hashes make the supply-chain gate deterministic across platforms. |
+| 2026-11-26 | Push both commits to public `main` after explicit user confirmation. | The user chose "Yes — push and deploy" with the stated consequence: public branch update, CI run and a new Vercel production build. Licence and visibility were not changed. |

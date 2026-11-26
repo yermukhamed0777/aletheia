@@ -49,13 +49,16 @@ for (const f of ['interface.js', 'pages.js', 'controller.js']) {
   ok(!/' ms'/.test(source), 'hard-coded ms unit in src/' + f);
 }
 
-// Vendored pdf.js blobs are pinned (P1-3). A silent upgrade is a supply-chain change.
+// Vendored pdf.js blobs are pinned (P1-3). A silent upgrade is a supply-chain
+// change. Git normalises these files to LF on Linux but checks them out as
+// CRLF on Windows, so hash the canonical LF bytes on every platform.
 const VENDOR_HASH = {
-  'pdf.min.mjs': '3f2374cbc1639408d65f517003bb8dd6671775f6592dc9fa2a7b686246d4830e',
-  'pdf.worker.min.mjs': '8b855be66d4dbeb4a9e8950656eb0f22d83645febef73818d4e42f4dbe72b64d',
+  'pdf.min.mjs': '9fab0c910bf1484835c5c2aeb68f7eb3dfce7f9eb435a004526c5af86d70890c',
+  'pdf.worker.min.mjs': 'bc0d1b88ea0b66196b1d36a58ac243c6d92adfe725624e2a9fdd381bdf8ef434',
 };
 for (const [f, hash] of Object.entries(VENDOR_HASH)) {
-  const actual = crypto.createHash('sha256').update(fs.readFileSync('vendor/' + f)).digest('hex');
+  const lf = fs.readFileSync('vendor/' + f, 'utf8').replace(/\r\n/g, '\n');
+  const actual = crypto.createHash('sha256').update(Buffer.from(lf, 'utf8')).digest('hex');
   ok(actual === hash, 'vendor/' + f + ' hash changed: ' + actual);
 }
 

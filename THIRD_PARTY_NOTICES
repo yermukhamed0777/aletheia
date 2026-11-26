@@ -29,8 +29,11 @@ Notice reproduced from `vendor/pdf.min.mjs:1-21`:
 Pinned hashes (verified by `node lint.mjs`, 2026-11-26)
 -------------------------------------------------------
 
-    SHA-256  vendor/pdf.min.mjs        3f2374cbc1639408d65f517003bb8dd6671775f6592dc9fa2a7b686246d4830e
-    SHA-256  vendor/pdf.worker.min.mjs 8b855be66d4dbeb4a9e8950656eb0f22d83645febef73818d4e42f4dbe72b64d
+Hashes are computed over LF-normalised bytes so that Windows checkouts (CRLF)
+and Linux checkouts (LF) produce the same value.
+
+    SHA-256  vendor/pdf.min.mjs        9fab0c910bf1484835c5c2aeb68f7eb3dfce7f9eb435a004526c5af86d70890c
+    SHA-256  vendor/pdf.worker.min.mjs bc0d1b88ea0b66196b1d36a58ac243c6d92adfe725624e2a9fdd381bdf8ef434
 
 Any change to either file changes these hashes and fails lint. Upgrading pdf.js
 is therefore an explicit, reviewable change to this notice.

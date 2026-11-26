@@ -144,3 +144,23 @@ collection rules, failure filing, go/no-go and the explicit human-only list).
 `CHECK PASSED — ... 334 literal t() keys used of 436 defined strings verified`,
 `LINT PASSED — 10 source files parsed, ... 2 pinned vendor hashes verified`,
 `EVAL PASSED — 50/72 (69.4%)`, `E2E PASSED — root + subpath, zero console errors`.
+
+## 2026-11-26 — post-push CI failure and fix
+
+**Event:** after user confirmation, `git push origin main` moved
+`605da26..5e784b2 main -> main`. CI run
+`https://github.com/yermukhamed0777/aletheia/actions/runs/45753969933`
+(job `139688110819`) failed at **Source lint** with exit code 1:
+`LINT FAILED (2)` — `vendor/pdf.min.mjs hash changed: 9fab0c…` and
+`vendor/pdf.worker.min.mjs hash changed: bc0d1b8…`. The gate correctly stopped
+the release. Cause: the vendor blobs are checked out CRLF on this Windows
+machine but LF on `ubuntu-latest`; the pinned hashes were platform-specific.
+
+**Fix:** `lint.mjs` now hashes LF-normalised bytes and pins the canonical LF
+hashes (`9fab0c910bf148…`, `bc0d1b88ea0b…`); `THIRD_PARTY_NOTICES` records the
+same values and the normalisation rule.
+
+**Verification after fix:** `node lint.mjs` → `LINT PASSED — 10 source files
+parsed, bundle order, tracked-file, view-copy, legacy-global and 2 pinned vendor
+hashes verified`; `.\verify.cmd` re-run with all six commands exit 0. A new CI
+run must pass before the release can proceed.

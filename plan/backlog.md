@@ -100,7 +100,9 @@ commands and results go in `plan/progress.md`.
 
 - **P1-3 — Pin and verify vendored pdf.js.** **Done 2026-11-26:** both SHA-256
   values recorded in `THIRD_PARTY_NOTICES` and checked by `lint.mjs` on every
-  run; clean run reports 2 pinned hashes verified.
+  run. Post-push CI run 45753969933 exposed a CRLF/LF mismatch; fixed by
+  hashing LF-normalised bytes and pinning the canonical hashes. Clean local
+  run reports 2 pinned hashes verified.
 
 ## M1 — field validation
 
