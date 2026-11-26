@@ -13,8 +13,11 @@ const CORPUS = vm.runInContext('CORPUS', ctx);
 const Retrieval = vm.runInContext('Retrieval', ctx);
 const index = Retrieval.buildIndex(CORPUS.CHUNKS);
 const THRESHOLD = 0.6;
-// 0.694 is the measured baseline of this run: 50/72 correct. Regressions fail CI.
-const MIN = Number(process.env.EVAL_MIN || 0.694);
+// Original regression floor: 0.694 (50/72). After the measured stopword fix the
+// same frozen sets score 67/72 = 0.93055… (displayed 93.1%); the floor is raised
+// only to that measured value (0.9305), never lowered. Expected answers and the
+// 0.6 retrieval threshold are unchanged.
+const MIN = Number(process.env.EVAL_MIN || 0.9305);
 
 function answerText(result) {
   if (result.status !== 'answer') return '';

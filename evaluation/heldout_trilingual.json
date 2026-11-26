@@ -1,0 +1,23 @@
+{
+  "note": "Held-out research set: EN/RU/KK questions drawn from curated demo QA items and intentionally unanswerable items that do not appear in validation/*.json. Not used for tuning and not part of the CI gate.",
+  "ans": [
+    ["Метформиннің ең жоғары тәуліктік дозасы қандай?", "2000 мг"],
+    ["Ванкомицин емі кезінде бүйрек қызметі қанша жиі тексеріледі?", "48 сағат"],
+    ["Биохимиялық талдау үшін сарысуды қалай дайындау керек?", "1600 g"],
+    ["Реагенттер қандай температурада сақталады?", "2–8"],
+    ["Критикалық калий нәтижесін қаншалықты тез хабарлау керек?", "15 минут"],
+    ["How should serum samples be prepared for chemistry?", "1600 g"],
+    ["Как часто проверяют функцию почек при терапии ванкомицином?", "48"],
+    ["Which source wins when two documents disagree?", "formulary"],
+    ["How long can thawed plasma be kept?", "24"],
+    ["Which combination carries a serotonin syndrome risk?", "linezolid"]
+  ],
+  "idk": [
+    "Балаларға метформин дозасы қандай?",
+    "КТ үшін қандай йодты контраст препараты қолданылады?",
+    "Науқастар бұл талдауларды үйде жасай ала ма?",
+    "Талдауларды кім төлейді?",
+    "Жануарлар үлгілерін талдайсыз ба?",
+    "What is the metformin dose for children?"
+  ]
+}

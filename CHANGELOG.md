@@ -4,6 +4,14 @@ Dates are UTC, taken from `git log --format='%h %ad %s' --date=short`.
 
 ## Unreleased
 
+- **P1-1 (retrieval closeout)** Reproduced the original 50/72 baseline,
+  investigated all 22 failed answerable cases, and ran six in-memory variants.
+  Chosen V6 prunes 26 non-evidence interrogative/service words and maps contact
+  vocabulary to the corpus: 67/72 (answers 43/48, abstentions 24/24 unchanged).
+  V4/V5 were rejected for breaking abstention (24→11). Added a curated refusal
+  layer for unanswerable questions, a separate EN/RU/KK hold-out, benchmark and
+  experiment harnesses, and `RESEARCH_REPORT.md`. `EVAL_MIN` raised from the
+  measured 0.694 floor to the newly measured 0.9305; threshold stays 0.6.
 - **P0-13 (release closeout)** Fixed six corrupted `[\s\VIEW]` regexes in
   `src/model.js` that silently broke DOCX, XLSX and text-PDF parsing — capabilities
   the README claimed worked. Added `data.mjs` (19 synthetic-fixture checks),

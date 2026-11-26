@@ -241,3 +241,37 @@ updated; `RELEASE_REPORT.md` added.
 decisions (`PILOT_HANDOFF.md`); optional next: P1-1 accuracy floor, M1-1 audit
 CSV, M2-3 Windows CI, and the remaining accessibility/licence decisions.
 This closeout is **DEMO READY**, not a clinically validated release.
+
+## 2026-11-26 — retrieval benchmark and safety evaluation (P1-1, current)
+
+**Baseline reproduced:** `node benchmark.mjs` before changes →
+`ANSWERS 26/48, ABSTENTIONS 24/24, OVERALL 50/72`; per-file dev 11/22, fresh
+8/12, heldout1 7/14. Each of the 22 failed answerable cases was inspected
+against corpus stems and hit chunks; evidence is in
+`artifacts/benchmark/failure-analysis.txt`.
+
+**Experiments:** `node experiment.mjs` reconstructed the original engine and
+applied V0–V6 in memory (`artifacts/benchmark/experiments.txt`). V0 50/72 with
+24/24 abstentions; V1/V3 67/72 but `heldout1:ans13` became a wrong answer;
+V4/V5 52–54/72 with abstentions down to 11/24 — rejected; V6 67/72 with 24/24
+abstentions and no lost passes — implemented.
+
+**Changed:** `src/retrieval.js` (26 non-evidence words pruned; contact synonyms
+mapped), `src/model.js` (curated refusal layer before lexical ranking),
+`eval.mjs` (`EVAL_MIN` 0.694 → measured 0.9305), `unit.mjs` (9 new safety and
+improvement assertions), `qa.mjs` (focus restoration), `benchmark.mjs`
+(app-level abstention and EN/RU/KK research set), `experiment.mjs`,
+`evaluation/heldout_trilingual.json`, `RESEARCH_REPORT.md`, and README/
+CHANGELOG/plan records.
+
+**Final commands and exact results:**
+- `node eval.mjs` → `dev.json: ans 22/22, idk 8/8, total 30/30`; `fresh.json: ans 11/12, idk 8/8, total 19/20`; `heldout1.json: ans 10/14, idk 8/8, total 18/22`; `EVAL PASSED — 67/72 (93.1%) at threshold 0.6, minimum 0.9305`.
+- `node benchmark.mjs` → `ANSWERS 43/48, ABSTENTIONS 24/24, OVERALL 67/72`; `HELD-OUT EN/RU/KK: ans 5/10, raw abstentions 5/6, app-level abstentions 6/6`.
+- `.\verify.cmd` → UNIT 48/48, DATA 19/19, CHECK passed (334/436 keys), LINT passed (10 sources, 2 vendor hashes), EVAL 67/72, `built 2639 KB`, E2E 13/13, QA 24/24; exit 0.
+- App-layer check: `resolveQuestion('Балаларға метформин дозасы қандай?')` → `kind='abstain'`, `qa.id='x-pediatric'`; raw lexical search for the same string answers, so the safety layer is necessary.
+- `curl.exe -sSI https://aletheia-nine-iota.vercel.app/` → 200 with all three security headers (production still the prior build at the time of this entry).
+
+**Open:** P1-1 is done. Remaining answerable failures are documented with reasons
+in `RESEARCH_REPORT.md`; the Kazakh hold-out answerable score is unchanged at
+5/10. Human-only items and optional next work remain as above. No clinical
+validation or real-user result is claimed.

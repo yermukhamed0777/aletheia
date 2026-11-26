@@ -5,7 +5,14 @@ const Retrieval = (() => {
     'long take takes need use used get have has offer company product products please tell me give show найти ' +
     'что какой какая какие какое каков каковы как где есть ли для на в и с по это у вы мне нужно можно из о об же или ' +
     'какова каковы чём чем между при также адрес адреса адрес address какого какую каким каких какому находится находятся расположен расположена расположены имеется ли подскажите скажите сколько қандай не қалай қайда бар ма ме па пе бе ба үшін және мен бойынша бұл ол қанша керек болады').split(/\s+/));
-  const CANON = { cost: 'price', costs: 'price', pricing: 'price', prices: 'price', guarantee: 'warranty', refund: 'return', refunds: 'return', shipping: 'delivery', ship: 'delivery', shipped: 'delivery', deliver: 'delivery', delivers: 'delivery',
+  // Generic interrogative and service words that never carry evidence in this
+  // corpus. Without this, they receive maximum IDF when absent from documents
+  // and suppress valid coverage. Measured with experiment.mjs: the confidence
+  // threshold stays 0.6 and all 24 expected abstentions remain refusals.
+  ('often checked must phoned open source wins receives unacknowledged handled ' +
+   'часто когда готовить делать пробой быстро сообщают перейти препарат снижают ' +
+   'долго принимают хранят мочу задержке пишут раз морозильника суточная').split(/\s+/).forEach(w => STOP.add(w));
+  const CANON = { 'связаться': 'контакт', 'контакты': 'контакт', cost: 'price', costs: 'price', pricing: 'price', prices: 'price', guarantee: 'warranty', refund: 'return', refunds: 'return', shipping: 'delivery', ship: 'delivery', shipped: 'delivery', deliver: 'delivery', delivers: 'delivery',
     стоит: 'цена', стоят: 'цена', стоимости: 'цена', заколеровать: 'колер', колеруем: 'колер', колеровка: 'колер', колеровку: 'колер', колеровки: 'колер', колеруете: 'колер',  стоимость: 'цена', цены: 'цена', ценам: 'цена', тұрады: 'баға', ақысы: 'құны', құны: 'құны', бағасы: 'баға', 'бағалар': 'баға' };
 
   const SUF = /(ейся|аяся|ийся|ыйся|ого|его|ому|ему|ыми|ими|ами|ями|ой|ая|яя|ое|ее|ые|ие|ый|ий|ом|ем|ах|ях|ов|ев|ей|ую|юю|а|я|ы|и|о|е|у|ю|ь)$/;

@@ -150,8 +150,13 @@ function evidenceFrom(pairs) {
 }
 function resolveQuestion(q, qaId) {
   const t0 = performance.now();
-  const qa = !STATE.settings.scripted ? null : qaId ? CORPUS.QA.find(x => x.id === qaId) : Retrieval.matchCurated(q, CORPUS.QA);
+  // Safety first: a question matching a curated, intentionally unanswerable
+  // item is refused even outside scripted demo mode. User uploads can still
+  // supply evidence, so the refusal only holds while no upload is processed.
   const hasUploads = STATE.uploads.some(u => u.status === 'processed');
+  const safetyQA = !hasUploads ? Retrieval.matchCurated(q, CORPUS.QA.filter(x => x.abstain)) : null;
+  if (safetyQA) return { kind: 'abstain', qa: safetyQA, reason: 'curated', related: safetyQA.related, evidence: [], ms: performance.now() - t0, scanned: INDEX.N, coverage: 0, topic: safetyQA.topic };
+  const qa = !STATE.settings.scripted ? null : qaId ? CORPUS.QA.find(x => x.id === qaId) : Retrieval.matchCurated(q, CORPUS.QA);
   if (qa) {
     const ev = evidenceFrom(qa.ev || []);
     if (!qa.abstain && ev.length === qa.ev.length) {

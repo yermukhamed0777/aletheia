@@ -9,7 +9,7 @@ commands and results go in `plan/progress.md`.
 | Horizon | ID range | Meaning |
 |---|---|---|
 | Short term | P0-1 … P0-13 | Assistant can do next; one session each. |
-| Short term (quality) | P1-1 … P1-3 | Small measured improvements after P0. |
+| Short term (quality) | P1-1 … P1-4 | Small measured improvements after P0. |
 | Midterm | M1-1 … M2-3 | Real validation, team and product readiness. |
 | Long term | M3-1 … M3-4 | Product shape, posture and commercial model. |
 
@@ -96,10 +96,21 @@ commands and results go in `plan/progress.md`.
 
 ## P1 — measured quality
 
-- **P1-1 — Improve validation accuracy above the measured floor.** `eval.mjs:14`,
-  `validation/*.json`. Baseline 50/72 (69.4%), ans 26/48, idk 24/24.
-  Open: optional next; requires a retrieval-only change that raises the measured
-  score before `EVAL_MIN` may change.
+- **P1-1 — Improve validation accuracy above the measured floor.** **Done
+  2026-11-26:** reproduced 50/72 (ans 26/48, idk 24/24); investigated all 22
+  failed answerable cases (`artifacts/benchmark/failure-analysis.txt`); ran
+  variants V0–V6 (`artifacts/benchmark/experiments.txt`). Chosen V6 in
+  `src/retrieval.js`: 67/72 (ans 43/48, idk 24/24), dev 11/22→22/22, fresh
+  8/12→11/12, heldout1 7/14→10/14. V4/V5 rejected for reducing abstentions
+  24→11; V1/V3 rejected for turning a contact question into a wrong answer.
+  `EVAL_MIN` raised to measured 0.9305; threshold and expected answers unchanged.
+  Separate EN/RU/KK hold-out: answers 5/10 (unchanged), app-level abstentions
+  6/6. Evidence in `RESEARCH_REPORT.md`.
+
+- **P1-4 — Curated refusal layer for unanswerable questions.** New. **Done
+  2026-11-26:** `resolveQuestion()` now checks curated abstain items before
+  lexical ranking when no upload is processed, so EN/RU/KK paediatric questions
+  are refused even outside scripted demo mode. Four unit assertions cover it.
 
 - **P1-2 — Add a browser smoke test.** **Done 2026-11-26:** `e2e.mjs` serves
   `dist/index.html` locally, drives landing → ask → citation → drawer → close,
