@@ -130,3 +130,17 @@ pinned vendor hashes; CI installs Chromium and gates on unit + e2e; docs
 Human-only: pilot recruitment/consent, real corpus approval, go/no-go, and the
 push/deploy decision. CI has not yet been re-run on the new commit (no push was
 made). No usage, adoption or revenue metric was measured.
+
+## 2026-11-26 — documentation commit (P0-12)
+
+**Changed:** `README.md` gained accurate verify and backup/restore sections and
+updated status rows; `CONTRIBUTING.md`, `CHANGELOG.md` and
+`THIRD_PARTY_NOTICES` were reconciled with the code; added `WALKTHROUGH.md`
+(deterministic capture) and `PILOT_HANDOFF.md` (consent wording, schedule,
+collection rules, failure filing, go/no-go and the explicit human-only list).
+
+**Commands and results:** no source or test files changed in this commit;
+`.\verify.cmd` was re-run before committing → `UNIT PASSED — 39 passed, 0 failed`,
+`CHECK PASSED — ... 334 literal t() keys used of 436 defined strings verified`,
+`LINT PASSED — 10 source files parsed, ... 2 pinned vendor hashes verified`,
+`EVAL PASSED — 50/72 (69.4%)`, `E2E PASSED — root + subpath, zero console errors`.

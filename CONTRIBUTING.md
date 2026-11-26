@@ -10,11 +10,16 @@ No install step is required for the app itself. Node 24 or newer is used in
 CI. From the repository root:
 
 ```bash
+npm ci                   # dev-only dependency for the browser test
 node bundle.mjs          # build dist/index.html from src/
-node check.mjs           # pass/fail smoke check (also builds)
-node lint.mjs            # syntax/convention lint
+node check.mjs           # smoke check; also runs unit.mjs
+node lint.mjs            # syntax/convention lint + pinned vendor hashes
 node eval.mjs            # score validation sets against the retriever
+node unit.mjs            # fast pure-rule and boot regressions
+node e2e.mjs             # Chromium smoke, root + subpath
 ```
+
+Use `.\verify.cmd` on Windows to run all six commands in sequence.
 
 On Windows with PowerShell `ExecutionPolicy = Restricted`, `npm`/`npx`
 resolve to `.ps1` shims that are blocked. Use `node <script>` directly, or the
@@ -38,7 +43,7 @@ Do not change the machine execution policy for this project.
 
 ## Before opening a pull request
 
-1. Run all four commands above and paste the exact output.
+1. Run `.\verify.cmd` (or all six commands above) and paste the exact output.
 2. Open the built bundle in a browser and check the affected view.
 3. Update `validation/` if retrieval behaviour changed, and report the eval
    numbers before/after.

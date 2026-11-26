@@ -26,6 +26,16 @@ Notice reproduced from `vendor/pdf.min.mjs:1-21`:
     See the License for the specific language governing permissions and
     limitations under the License.
 
+Pinned hashes (verified by `node lint.mjs`, 2026-11-26)
+-------------------------------------------------------
+
+    SHA-256  vendor/pdf.min.mjs        3f2374cbc1639408d65f517003bb8dd6671775f6592dc9fa2a7b686246d4830e
+    SHA-256  vendor/pdf.worker.min.mjs 8b855be66d4dbeb4a9e8950656eb0f22d83645febef73818d4e42f4dbe72b64d
+
+Any change to either file changes these hashes and fails lint. Upgrading pdf.js
+is therefore an explicit, reviewable change to this notice.
+
 All other project code in `src/` is first-party. No network dependencies are
 downloaded at build time; the two vendored pdf.js files are the only
-third-party artefacts shipped in the bundle.
+third-party artefacts shipped in the bundle. The Playwright dev dependency is
+used only by `e2e.mjs` and is not shipped in `dist/index.html`.
