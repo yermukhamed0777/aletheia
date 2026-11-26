@@ -1,5 +1,5 @@
 /* Views: pure render functions returning HTML strings. */
-const VIEW = { route: '/', thread: [], drawer: null, qs: null, tour: null, ob: null, libQ: '', libType: 'all', libStatus: 'all', gapTab: 'open', navOpen: false, lp: 0, confirm: null };
+const VIEW = { route: '/', thread: [], drawer: null, qs: null, tour: null, tourSession: false, ob: null, libQ: '', libType: 'all', libStatus: 'all', gapTab: 'open', navOpen: false, lp: 0, confirm: null };
 const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--ink)"/><path d="M11 8H9.5a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 9.5 24H11M21 8h1.5A1.5 1.5 0 0 1 24 9.5v13a1.5 1.5 0 0 1-1.5 1.5H21" fill="none" stroke="var(--bg)" stroke-width="2" stroke-linecap="round"/><path d="m12.5 16.2 2.6 2.6 4.6-5.4" fill="none" stroke="var(--mark)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const logo = href => `<a class="logo" href="${href}" aria-label="${esc(t('app.name'))}">${LOGO}<span>${esc(t('app.name'))}</span></a>`;
 const langSw = () => `<div class="langsw" role="group" aria-label="${esc(t('lang.label'))}">${LANGS.map((l, i) => `<button data-act="lang" data-i="${i}" aria-pressed="${i === LANG}" title="${l[2]}" lang="${l[0]}">${l[1]}</button>`).join('')}</div>`;
@@ -42,7 +42,7 @@ function composeDirect(r) {
 function plainAnswer(turn) {
   const r = turn.result, c = composeDirect(r);
   if (r.kind === 'abstain') return `${turn.q}\n\n${t('abst.title')}\n${r.qa ? pick(r.qa.why) : t('abst.generic')}`;
-  return `${turn.q}\n\n${c.direct}\n${c.details.map(d => '• ' + d).join('\n')}\n\n${t('ev.title')}:\n${r.evidence.map((e, i) => `[${i + 1}] ${citeStr(e.chunk)}`).join('\n')}`;
+  return `${turn.q}\n\n${c.direct}\n${c.details.map(d => '• ' + d).join('\n')}\n\n${t('ev.title')}:\n${r.evidence.map((e, i) => `[${i + 1}] ${citeStr(e.chunk, sourceOf(e))}`).join('\n')}`;
 }
 
 /* ---------- assistant turn ---------- */
@@ -74,8 +74,8 @@ function turnView(turn) {
         <div class="muted" style="font-size:12px;margin-top:8px">${ic('info', 'sm')} ${esc(t('cmp.why'))} <i>${esc(citeStr(cr))}</i></div>`; }
     const part = r.semantic ? `<div class="callout warn">${ic('warn')}<div><b>${esc(t('ans.sem'))}</b> ${esc(t('ans.sem.d', Math.round(r.sem.sim * 100) + '%'))}</div></div>` : r.partial ? `<div class="callout warn">${ic('warn')}<div><b>${esc(t('ans.partial'))}</b> ${esc(t('ans.partial.d'))}</div></div>` : '';
     body = `<div class="ans-b">${part}<p class="direct" ${r.partial ? 'style="margin-top:12px"' : ''}>${esc(c.direct)}${cites}</p>
-      <div class="srcline"><span class="eyebrow">${esc(t('ans.source'))}</span>${[...new Map(r.evidence.map((e, i) => [e.chunk.doc, i])).entries()].map(([id, i]) => { const d = docById(id); return d ? `<button class="chip" style="height:26px;font-size:12px" data-act="src" data-turn="${turn.id}" data-i="${i}">${ficonS(d.type)}<b>${esc(d.name)}</b><span class="muted">${esc(locLabel(r.evidence[i].chunk.loc))}</span></button>` : ''; }).join('')}</div>${c.details.length ? `<ul class="det">${c.details.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}${cmp}
-      <div class="ev"><div class="eyebrow">${esc(t('ev.title'))} · ${r.evidence.length}</div>${r.evidence.map((e, i) => { const d = docById(e.chunk.doc); return `<button class="ev-card" data-act="src" data-turn="${turn.id}" data-i="${i}"><span class="ev-n">${i + 1}</span>
+      <div class="srcline"><span class="eyebrow">${esc(t('ans.source'))}</span>${[...new Map(r.evidence.map((e, i) => [e.source?.id || e.chunk.doc, i])).entries()].map(([id, i]) => { const d = sourceOf(r.evidence[i]); return d ? `<button class="chip" style="height:26px;font-size:12px" data-act="src" data-turn="${turn.id}" data-i="${i}">${ficonS(d.type)}<b>${esc(d.name)}</b><span class="muted">${esc(locLabel(r.evidence[i].chunk.loc))}</span></button>` : ''; }).join('')}</div>${c.details.length ? `<ul class="det">${c.details.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}${cmp}
+      <div class="ev"><div class="eyebrow">${esc(t('ev.title'))} · ${r.evidence.length}</div>${r.evidence.map((e, i) => { const d = sourceOf(e); return `<button class="ev-card" data-act="src" data-turn="${turn.id}" data-i="${i}"><span class="ev-n">${i + 1}</span>
         <span class="ev-t">${ficonS(d.type)}<b>${esc(d.name)}</b><span class="badge">${esc(locLabel(e.chunk.loc))}</span></span><span class="muted" style="font-size:12px;align-self:center">${ic('eye', 'sm')}</span><span class="ev-x">${hlLines(e, true)}</span></button>`; }).join('')}</div></div>`;
   }
   let how = '';
@@ -83,7 +83,7 @@ function turnView(turn) {
     <b>${esc(t('how.mode'))}</b><span>${esc(r.kind === 'curated' ? t('how.curated') : r.kind === 'remote' ? t('prov.remote') : t('how.live'))}</span>
     <b>${esc(t('how.scanned'))}</b><span>${r.scanned ?? '—'} ${esc(t('chunks'))}</span>
     <b>${esc(t('how.cover'))}</b><span>${abst ? Math.round((r.coverage || 0) * 100) + '% < ' + Math.round(STATE.settings.threshold * 100) + '%' : r.kind === 'curated' ? '100%' : Math.round(r.coverage * 100) + '% ≥ ' + Math.round((r.semantic ? STATE.settings.semThr : STATE.settings.threshold) * 100) + '%'}</span>
-    <b>${esc(t('how.time'))}</b><span>${(r.ms ?? 0).toFixed(1)} ms</span></div></details>`;
+    <b>${esc(t('how.time'))}</b><span>${(r.ms ?? 0).toFixed(1)} ${esc(t('unit.ms'))}</span></div></details>`;
   const follows = abst ? [] : (r.kind === 'curated' ? r.qa.follow : CORPUS.QA.filter(x => !x.abstain && x.topic === r.topic && x.id !== r.qa?.id).map(x => x.id)).slice(0, 3);
   return `<section data-turn="${turn.id}">${q}<article class="ans ${abst ? 'abst' : ''}" style="margin-top:12px" aria-label="${esc(t('ans.label'))}">
     <div class="ans-h">${abst ? `<span class="badge warn">${ic('warn', 'sm')} ${esc(t('abst.badge'))}</span>` : `<span class="badge ok">${ic('check', 'sm')} ${esc(t('ans.verified', r.evidence.length))}</span>${strengthMeter(r.strength)}`}<span class="grow"></span>${prov ? `<span class="muted">${esc(prov)}</span>` : ''}</div>
@@ -128,11 +128,8 @@ function assistantView() {
 /* ---------- dashboard ---------- */
 function stats() {
   const ds = docList(), proc = ds.filter(d => d.status === 'processed').length, hist = STATE.history;
-  const live = hist.filter(h => !h.seed);
-  const seedSearch = SEED_DAYS.ans.reduce((a, b) => a + b, 0) + SEED_DAYS.gap.reduce((a, b) => a + b, 0);
-  const seedGapN = SEED_DAYS.gap.reduce((a, b) => a + b, 0);
-  const total = seedSearch + live.length, ans = total - seedGapN - live.filter(h => h.status === 'abstain').length;
-  return { docs: ds.length, proc, chunks: INDEX.N, total, ans, rate: total ? ans / total : 0, live };
+  const ans = hist.filter(h => h.status === 'answer').length;
+  return { docs: ds.length, proc, chunks: INDEX.N, total: hist.length, ans, rate: hist.length ? ans / hist.length : 0, live: hist };
 }
 function dashboardView() {
   const st = stats(), ds = docList().slice(0, 5), hist = STATE.history.slice(0, 5), gapsOpen = STATE.gaps.filter(g => g.status === 'open').length;
@@ -160,7 +157,7 @@ const modeT = k => t(STATE.settings.scripted ? 'mode.' + k : 'mode.live.' + k);
 function aiStatusText() { const s = Augment.st; return s.status === 'loading' ? t('ai.loading', s.progress) : s.status === 'ready' ? (s.indexing ? t('ai.indexing') : t('ai.ready')) : s.status === 'error' ? t('ai.error') : t('ai.off'); }
 function histQ(h) { if (h.q) return h.q; const qa = qaById(h.qa); return qa ? questionText(qa) : ''; }
 function statusBadge(d) {
-  if (d.status === 'processed') return `<span class="badge ok">${esc(t('st.processed'))}${d.ocr ? ' · OCR' : ''}</span>`;
+  if (d.status === 'processed') return `<span class="badge ok">${esc(t('st.processed'))}${d.ocr ? ' · ' + esc(t('st.ocr')) : ''}</span>`;
   if (d.status === 'processing') return `<span class="badge info">${esc(t('st.processing'))} ${d.progress}%</span>`;
   return `<span class="badge bad">${esc(t('st.failed'))}</span>`;
 }
@@ -200,8 +197,13 @@ function topicCoverage() {
   });
 }
 function chartSVG() {
-  const live = STATE.history.filter(h => !h.seed && Date.now() - h.ts < DAY);
-  const A = SEED_DAYS.ans.slice(), G = SEED_DAYS.gap.slice(); A[13] += live.filter(h => h.status === 'answer').length; G[13] += live.filter(h => h.status === 'abstain').length;
+  const A = [], G = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (13 - i));
+    const t0 = d.getTime(), t1 = t0 + DAY, rows = STATE.history.filter(h => h.ts >= t0 && h.ts < t1);
+    A.push(rows.filter(h => h.status === 'answer').length);
+    G.push(rows.filter(h => h.status === 'abstain').length);
+  }
   const W = 640, H = 190, pl = 30, pb = 22, max = Math.max(1, ...A.map((a, i) => a + G[i])), bw = (W - pl) / 14;
   const bars = A.map((a, i) => { const x = pl + i * bw + 5, w = bw - 10, ha = a / max * (H - pb - 10), hg = G[i] / max * (H - pb - 10); const d = new Date(Date.now() - (13 - i) * DAY);
     return `<rect x="${x}" y="${H - pb - ha}" width="${w}" height="${ha}" rx="2" fill="var(--accent)"><title>${a}</title></rect><rect x="${x}" y="${H - pb - ha - hg}" width="${w}" height="${hg}" rx="2" fill="var(--warn)"><title>${G[i]}</title></rect><text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${d.getDate()}</text>`; }).join('');
@@ -210,9 +212,14 @@ function chartSVG() {
 }
 function analyticsView() {
   const st = stats(), cov = topicCoverage();
-  const top = Object.entries(SEED_TOP).map(([id, n]) => ({ id, n: n + ((STATE.liveTop[id] || {}).n || 0), q: questionText(qaById(id)) }));
-  Object.entries(STATE.liveTop).forEach(([k, v]) => { if (!SEED_TOP[k] && v.qa) top.push({ id: v.qa, n: v.n, q: questionText(qaById(v.qa)) }); else if (!SEED_TOP[k]) top.push({ id: k, n: v.n, q: v.q }); });
-  top.sort((a, b) => b.n - a.n); const mx = top.length ? top[0].n : 1, openGaps = STATE.gaps.filter(g => g.status === 'open');
+  const counts = new Map();
+  STATE.history.forEach(h => {
+    const key = h.qa || normKey(h.q || histQ(h));
+    const cur = counts.get(key) || { n: 0, q: histQ(h) };
+    cur.n++; counts.set(key, cur);
+  });
+  const top = [...counts.entries()].map(([id, v]) => ({ id, n: v.n, q: v.q })).sort((a, b) => b.n - a.n);
+  const mx = top.length ? top[0].n : 1, openGaps = STATE.gaps.filter(g => g.status === 'open');
   const fbs = Object.values(STATE.feedback), up = fbs.filter(x => x === 'up').length, ms = st.live.map(h => h.ms).sort((a, b) => a - b), med = ms.length ? ms[Math.floor(ms.length / 2)] : null;
   const col = { strong: 'var(--accent)', partial: 'var(--warn)', missing: 'var(--danger)' };
   return `<div class="page"><div class="page-h"><div><h1>${esc(t('nav.analytics'))}</h1><p>${esc(t('an.sub'))}</p></div></div>
@@ -221,7 +228,7 @@ function analyticsView() {
   <div class="panel"><div class="hd"><h3>${esc(t('an.success'))}</h3></div><div class="bd col" style="gap:14px">
     ${[[t('an.ans.rate'), st.total ? Math.round(st.rate * 100) + '%' : '—', 'var(--accent)', st.rate * 100], [t('an.abst.rate'), st.total ? Math.round((1 - st.rate) * 100) + '%' : '—', 'var(--warn)', st.total ? (1 - st.rate) * 100 : 0]].map(([l, v, c, p]) => `<div><div class="row between"><span class="dim">${esc(l)}</span><b>${v}</b></div><div class="progress" style="margin-top:6px"><i style="width:${p}%;background:${c}"></i></div></div>`).join('')}
     <div class="row between"><span class="dim">${esc(t('an.helpful'))}</span><b>${fbs.length ? up + ' / ' + fbs.length : '—'}</b></div>
-    <div class="row between"><span class="dim">${esc(t('an.median'))}</span><b>${med == null ? '—' : med.toFixed(1) + ' ms'}</b></div>
+    <div class="row between"><span class="dim">${esc(t('an.median'))}</span><b>${med == null ? '—' : med.toFixed(1) + ' ' + esc(t('unit.ms'))}</b></div>
     <p class="muted" style="font-size:12px">${esc(t('an.note'))}</p></div></div></div>
   <div class="grid2"><div class="panel"><div class="hd"><h3>${esc(t('an.top'))}</h3></div><div class="bd col" style="gap:12px">${top.length ? '' : `<span class="muted">${esc(t('an.empty'))}</span>`}${top.slice(0, 7).map(x => `<button style="border:0;background:none;padding:0;text-align:left" data-act="ask" data-qa="${esc(CORPUS.QA.find(q => q.id === x.id) ? x.id : '')}" data-q="${esc(x.q)}"><div class="row between" style="gap:12px"><span>${esc(x.q)}</span><b>${x.n}</b></div><div class="progress" style="margin-top:5px"><i style="width:${x.n / mx * 100}%"></i></div></button>`).join('')}</div></div>
   <div class="panel"><div class="hd"><h3>${esc(t('an.coverage'))}</h3></div><div class="bd col" style="gap:10px">${!STATE.settings.useDemo ? `<span class="muted">${esc(t('an.cov.off'))}</span>` : ''}${(STATE.settings.useDemo ? cov : []).map(c => `<div class="bar"><span class="t">${esc(pick(c.tp.n))}</span><span class="b"><i style="width:${c.lvl === 'strong' ? 100 : c.lvl === 'partial' ? 50 : 6}%;background:${col[c.lvl]}"></i></span><span style="width:70px;text-align:right;color:${col[c.lvl]};font-weight:600">${esc(t('cov.' + c.lvl))}</span></div>`).join('')}<p class="muted" style="font-size:12px">${esc(t('an.cov.note'))}</p></div></div></div>
@@ -241,13 +248,14 @@ function gapsView() {
   const cl = Object.entries(byTopic).sort((a, b) => b[1] - a[1]);
   return `<div class="page"><div class="page-h"><div><h1>${esc(t('nav.gaps'))}</h1><p>${esc(t('gap.sub'))}</p></div></div>
   ${cl.length ? `<div class="panel" style="margin-bottom:16px"><div class="hd"><h3>${ic('gap', 'sm')} ${esc(t('gap.clusters'))}</h3></div><div class="bd row wrap">${cl.map(([tp, n]) => `<span class="chip" style="cursor:default"><b>${esc(topicName(tp))}</b><span class="badge warn">${n}×</span></span>`).join('')}<span class="muted" style="font-size:12px;flex-basis:100%">${esc(t('gap.clusters.note'))}</span></div></div>` : ''}
-  <div class="tabs" role="tablist">${['open', 'resolved', 'all'].map(k => `<button role="tab" data-act="gtab" data-v="${k}" aria-selected="${VIEW.gapTab === k}">${esc(t('gap.tab.' + k))}${k === 'open' ? ` <span class="badge warn">${openN}</span>` : ''}</button>`).join('')}</div>
+  <div id="gap-panel" role="tabpanel" aria-labelledby="gap-tab-${esc(VIEW.gapTab)}">
+  <div class="tabs" role="tablist">${['open', 'resolved', 'all'].map(k => `<button role="tab" id="gap-tab-${k}" aria-controls="gap-panel" data-act="gtab" data-v="${k}" aria-selected="${VIEW.gapTab === k}">${esc(t('gap.tab.' + k))}${k === 'open' ? ` <span class="badge warn">${openN}</span>` : ''}</button>`).join('')}</div>
   ${list.length ? `<div class="panel" style="margin-top:14px"><div style="overflow:auto"><table class="tbl"><thead><tr><th>${esc(t('gap.q'))}</th><th>${esc(t('gap.reason'))}</th><th class="hide-m">${esc(t('gap.docs'))}</th><th>${esc(t('gap.date'))}</th><th>${esc(t('lib.status'))}</th><th></th></tr></thead><tbody>
   ${list.map(g => { const docs = (g.qa ? qaById(g.qa).related : g.related) || []; return `<tr><td style="min-width:200px"><b>${esc(gapQ(g))}</b>${g.count > 1 ? `<div><span class="badge warn" style="margin-top:4px">${esc(t('gap.times', g.count))}</span></div>` : ''}</td><td style="min-width:220px;color:var(--ink-2)">${esc(gapReason(g))}</td>
   <td class="hide-m">${docs.map(id => docById(id)).filter(Boolean).map(d => `<button class="chip" style="height:24px;font-size:11px;margin:0 4px 4px 0" data-act="doc" data-id="${esc(d.id)}">${esc(d.name)}</button>`).join('') || '<span class="muted">—</span>'}</td>
   <td class="muted" style="white-space:nowrap">${esc(fmtDate(g.ts))}</td><td>${g.status === 'open' ? `<span class="badge warn">${esc(t('gap.open'))}</span>` : `<span class="badge ok">${esc(t('gap.resolved'))}</span>`}</td>
   <td><div class="row" style="justify-content:flex-end;flex-wrap:wrap"><button class="btn sm" data-act="rerun" data-id="${g.id}">${ic('refresh', 'sm')}${esc(t('gap.rerun'))}</button><button class="btn sm ${g.status === 'open' ? '' : 'ghost'}" data-act="resolve" data-id="${g.id}">${g.status === 'open' ? ic('check', 'sm') + esc(t('gap.resolve')) : esc(t('gap.reopen'))}</button></div></td></tr>`; }).join('')}</tbody></table></div></div>
-  <p class="muted" style="margin-top:12px;font-size:12px">${ic('info', 'sm')} ${esc(t('gap.hint'))}</p>` : `<div class="panel" style="margin-top:14px"><div class="empty">${ic('circ', 'lg')}<h3>${esc(t('gap.empty'))}</h3><p>${esc(t('gap.empty.sub'))}</p></div></div>`}</div>`;
+  <p class="muted" style="margin-top:12px;font-size:12px">${ic('info', 'sm')} ${esc(t('gap.hint'))}</p>` : `<div class="panel" style="margin-top:14px"><div class="empty">${ic('circ', 'lg')}<h3>${esc(t('gap.empty'))}</h3><p>${esc(t('gap.empty.sub'))}</p></div></div>`}</div></div>`;
 }
 
 /* ---------- settings ---------- */
@@ -287,6 +295,6 @@ function shell(inner) {
     <div class="sp"></div><button class="btn" data-act="tour" style="justify-content:center">${ic('play', 'sm')}${esc(t('tour.start'))}</button>
     <div class="row between" style="padding:10px 4px 0">${langSw()}<a class="muted" href="#home" style="font-size:12px">${esc(t('nav.site'))}</a></div></aside>
   <div class="main"><header class="top"><button class="btn icon ghost menu" data-act="menu" aria-label="${esc(t('nav.menu'))}">${ic('menu')}</button>
-    <button class="search-btn" data-act="qs">${ic('search', 'sm')}<span>${esc(t('qs.btn'))}</span><span class="kbd">Ctrl K</span></button><span class="grow"></span><span class="badge warn" title="${esc(modeT('long'))}">${esc(modeT('short'))}</span></header>
+    <button class="search-btn" data-act="qs">${ic('search', 'sm')}<span>${esc(t('qs.btn'))}</span><span class="kbd">${esc(kbdMod())} ${esc(t('qs.key'))}</span></button><span class="grow"></span><span class="badge warn" title="${esc(modeT('long'))}">${esc(modeT('short'))}</span></header>
     <div class="sim">${ic('info', 'sm')}<span><b>${esc(modeT('short'))}.</b> ${esc(modeT('long'))}</span></div>${inner}</div></div>`;
 }

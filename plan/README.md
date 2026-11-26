@@ -13,9 +13,9 @@ it can be reviewed in a diff.
 
 ## Status snapshot
 
-- Stage: static, browser-only demonstration; public repo, deployed on Vercel; no field validation yet.
-- Latest measured numbers: 39 questions / 22 passages / 436 defined strings; check passes; lint passes 9 files; eval 50/72 (69.4%); bundle 2635 KB. Full evidence in `progress.md`.
-- Next action: **P0-1** — add the remote-answer rendering regression test (see `roadmap.md` §1 and `backlog.md`).
+- Stage: static, browser-only demonstration; public repo, deployed on Vercel (production still serves the 2026-11-25 build); no field validation yet. Code and docs are complete locally up to the human pilot boundary.
+- Latest measured numbers: 39 questions / 22 passages / 436 defined strings / 334 used keys; unit 39/39; e2e 13/13; check passes; lint passes 10 files and 2 pinned vendor hashes; eval 50/72 (69.4%); bundle 2638 KB. Full evidence in `progress.md`.
+- Next action: **human only** — run the pilot in `PILOT_HANDOFF.md`; **optional next** — P1-1, raise the eval floor only after a measured retrieval improvement.
 
 ## Binding update convention
 
@@ -28,7 +28,8 @@ After EVERY work session, in the SAME commit as the work:
 5. Update the status snapshot above (stage, latest measured numbers, next action).
 6. Re-run tests, benchmark/lint and build; record results.
 
-Commands used here: `node check.mjs`, `node lint.mjs`, `node eval.mjs`,
-`node bundle.mjs` (or `.\verify.cmd` on Windows). Research or scoping sessions
+Commands used here: `node check.mjs` (runs `unit.mjs`), `node lint.mjs`,
+`node eval.mjs`, `node unit.mjs`, `node bundle.mjs`, `node e2e.mjs` (or
+`.\verify.cmd` on Windows). Research or scoping sessions
 still produce a plan entry. Append-only files are never rewritten; old rows and
 entries stay verbatim.

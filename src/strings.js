@@ -360,16 +360,6 @@ const TEXT = {
     "Приватность",
     "Құпиялылық"
   ],
-  "lp.pv.note": [
-    "Live preview from the demo corpus",
-    "Живой пример из демо-набора",
-    "Демо-жиыннан тірі мысал"
-  ],
-  "lp.pv.open": [
-    "Ask it in the demo",
-    "Задать в демо",
-    "Демода сұрау"
-  ],
   "lp.how.eyebrow": [
     "How it works",
     "Как это работает",
@@ -704,21 +694,6 @@ const TEXT = {
     "All sources",
     "Все источники",
     "Барлық дереккөздер"
-  ],
-  "dash.demo": [
-    "Presenting this demo?",
-    "Показываете демо?",
-    "Демоны ұсынып жатырсыз ба?"
-  ],
-  "dash.demo.sub": [
-    "A guided three-minute walkthrough runs the whole story for you.",
-    "Трёхминутная экскурсия проведёт вас по всей истории.",
-    "Үш минуттық экскурсия барлық тарихты өзі көрсетеді."
-  ],
-  "dash.idk": [
-    "Try an unanswerable question",
-    "Задайте вопрос без ответа",
-    "Жауабы жоқ сұрақ қойыңыз"
   ],
   "dash.gaps": [
     "{0} open questions",
@@ -1575,11 +1550,6 @@ const TEXT = {
     "Как используется стол доказательств и где он даёт сбой.",
     "Дәлелдер үстелі қалай қолданылатыны және қайда жетіспейтіні."
   ],
-  "an.sample": [
-    "Includes sample activity from the demo",
-    "Включает пример активности из демо",
-    "Демодан үлгі белсенділікті қосады"
-  ],
   "an.gapsopen": [
     "Open questions",
     "Открытые вопросы",
@@ -2166,9 +2136,9 @@ const TEXT = {
     "Жергілікті деректер қалпына келтірілді"
   ],
   "toast.badurl": [
-    "Enter a URL starting with http:// or https://",
-    "Введите URL, начинающийся с http:// или https://",
-    "http:// немесе https:// деп басталатын URL енгізіңіз"
+    "Use an HTTPS URL; http:// is allowed only for localhost or 127.0.0.1",
+    "Используйте HTTPS-адрес; http:// разрешён только для localhost или 127.0.0.1",
+    "HTTPS URL пайдаланыңыз; http:// тек localhost немесе 127.0.0.1 үшін рұқсат етілген"
   ],
   "toast.ep.on": [
     "Backend endpoint saved",
@@ -2179,5 +2149,35 @@ const TEXT = {
     "Using the local retriever",
     "Используется локальный поиск",
     "Жергілікті іздеу қолданылуда"
+  ],
+  "st.ocr": [
+    "OCR",
+    "OCR",
+    "OCR"
+  ],
+  "unit.ms": [
+    "ms",
+    "мс",
+    "мс"
+  ],
+  "qs.key": [
+    "K",
+    "K",
+    "K"
+  ],
+  "qs.esc": [
+    "Esc",
+    "Esc",
+    "Esc"
+  ],
+  "tour.timeup": [
+    "Time is up — continue when ready",
+    "Время вышло — продолжите, когда будете готовы",
+    "Уақыт бітті — дайын болғанда жалғастырыңыз"
+  ],
+  "err.storage": [
+    "Not saved: browser storage is full. Remove a document or clear the data.",
+    "Не сохранено: хранилище браузера заполнено. Удалите документ или очистите данные.",
+    "Сақталмады: браузер жадысы толды. Құжатты өшіріңіз немесе деректерді тазалаңыз."
   ]
 };

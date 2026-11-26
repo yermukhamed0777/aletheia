@@ -55,8 +55,9 @@ async function remoteAsk(q) {
   if (j.status === 'abstain' || !j.answer || !cites.length) return { kind: 'abstain', reason: 'remote', related: [], evidence: [], ms: j.ms || 0, scanned: j.scanned, coverage: 0, topic: 'general', qa: null, missing: [], remoteWhy: j.reason };
   const evidence = cites.map((c, i) => {
     const id = 'remote-' + seq + '-' + i;
-    REMOTE_DOCS.set(id, { id, name: String(c.doc || t('prov.remote')), type: 'txt', size: 0, ts: Date.now() });
-    return { chunk: { id, doc: id, loc: { label: c.location || '' }, lines: [c.excerpt || ''], topic: 'remote', remote: c }, lines: [0] };
+    const source = { id, name: String(c.doc || t('prov.remote')), type: 'txt', size: 0, ts: Date.now(), remote: true };
+    const chunk = { id, doc: id, loc: { label: String(c.location || '') }, lines: [String(c.excerpt || '')], topic: 'remote', remote: c };
+    return makeEvidence(chunk, [0], source);
   });
   return { kind: 'remote', direct: j.answer, details: j.details || [], evidence, strength: j.strength || 'moderate', ms: j.ms || 0, scanned: j.scanned, coverage: j.coverage ?? 1, topic: 'general' };
 }
@@ -64,12 +65,13 @@ async function ask(q, qaId) {
   q = (q || '').trim(); if (!q) return;
   if (VIEW.route !== '/app/ask') { VIEW.drawer = null; go('/app/ask'); await sleep(40); }
   const turn = { id: 't' + (++seq) + Date.now(), q, qa: qaId || null, qaClick: !!qaId, state: 'loading', step: 0 };
-  VIEW.thread.push(turn); render({ top: false });
+  VIEW.thread.push(turn); render({ top: false }); track('ask_started');
   let result, err;
   try { result = STATE.settings.endpoint ? await remoteAsk(q) : await resolveQuestionAsync(q, qaId || null); } catch (e) { err = e; }
   const el = () => document.querySelector(`[data-turn="${turn.id}"]`); el()?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   for (let i = 1; i <= 4; i++) { await sleep(270); turn.step = i; if (i < 4) render(); }
-  if (err) { turn.state = 'error'; turn.error = String(err.message || err); } else { turn.result = result; turn.state = 'done'; logResult(turn); }
+  if (err) { turn.state = 'error'; turn.error = String(err.message || err); }
+  else { turn.result = result; turn.state = 'done'; track(result.kind === 'abstain' ? 'abstain_shown' : 'answer_shown'); logResult(turn); }
   render(); el()?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const inp = $('#ask-in'); inp && inp.focus({ preventScroll: true });
 }
@@ -88,12 +90,39 @@ async function tourNext() {
   if (i >= TOUR_N - 1) { VIEW.tour = null; tourRestore(); go('/app/ask'); } else VIEW.tour = i + 1;
   renderOv();
 }
-function tourRestore() { if (VIEW.tourPrev) { Object.assign(STATE.settings, VIEW.tourPrev); VIEW.tourPrev = null; VIEW.thread = []; rebuild(); save(); } }
-function tourStart() { VIEW.tourPrev = { useDemo: STATE.settings.useDemo, scripted: STATE.settings.scripted }; STATE.settings.useDemo = true; STATE.settings.scripted = true; rebuild(); VIEW.thread = []; VIEW.drawer = null; VIEW.qs = null; VIEW.ob = null; VIEW.tour = 0; VIEW.tourT0 = Date.now(); STATE.onboarded = true; save(); go('/app'); render({ top: true }); }
+function tourRestore() {
+  VIEW.tourSession = false;
+  if (!VIEW.tourPrev) return;
+  Object.assign(STATE.settings, VIEW.tourPrev); VIEW.tourPrev = null;
+  VIEW.thread = []; rebuild(); save();
+}
+function tourStart() {
+  // Persist onboarding with the real settings, then shield the temporary demo
+  // overrides from save() until the tour is restored.
+  VIEW.tourSession = false; STATE.onboarded = true; save();
+  VIEW.tourPrev = { useDemo: STATE.settings.useDemo, scripted: STATE.settings.scripted };
+  STATE.settings.useDemo = true; STATE.settings.scripted = true;
+  VIEW.tourSession = true;
+  rebuild(); VIEW.thread = []; VIEW.drawer = null; VIEW.qs = null; VIEW.ob = null;
+  VIEW.tour = 0; VIEW.tourT0 = Date.now(); track('tour_started'); go('/app'); render({ top: true });
+}
+function saveEndpoint(value) {
+  const url = backendURL((value || '').trim());
+  if (value && !url) { toast(t('toast.badurl'), 'err'); return false; }
+  STATE.settings.endpoint = url || ''; save(); render();
+  toast(url ? t('toast.ep.on') : t('toast.ep.off'));
+  return true;
+}
+function resetAll() {
+  LS.del(STORAGE_KEY);
+  Object.assign(STATE, freshState()); STATE.onboarded = true; LANG = 0;
+  VIEW.thread = []; VIEW.confirm = null; VIEW.drawer = null;
+  rebuild(); save(); render(); toast(t('toast.reset'));
+}
 
 /* ---------- events ---------- */
 function setLang(i) {
-  LANG = i; STATE.lang = i; save(); if (STATE.settings.ai && Augment.ready()) Augment.indexChunks(allChunks(), LANG); VIEW.thread.forEach(tn => { if (tn.qaClick && tn.qa) tn.q = questionText(qaById(tn.qa)); }); render(); toast(t('toast.lang', LANGS[i][2]));
+  LANG = i; STATE.lang = i; track('lang_changed'); save(); if (STATE.settings.ai && Augment.ready()) Augment.indexChunks(allChunks(), LANG); VIEW.thread.forEach(tn => { if (tn.qaClick && tn.qa) tn.q = questionText(qaById(tn.qa)); }); render(); toast(t('toast.lang', LANGS[i][2]));
 }
 function closeOverlay() {
   if (VIEW.qs) VIEW.qs = null; else if (VIEW.confirm) VIEW.confirm = null; else if (VIEW.drawer) VIEW.drawer = null; else if (VIEW.ob != null) { VIEW.ob = null; STATE.onboarded = true; save(); } else return false;
@@ -103,7 +132,8 @@ function evText(e) { return `${citeStr(e.chunk)}\n"${e.lines.map(i => lt(e.chunk
 document.addEventListener('click', async ev => {
   const el = ev.target.closest('[data-act]'); if (!el) return; const a = el.dataset.act, d = el.dataset;
   if (el.tagName === 'A' && a !== 'demo') ev.preventDefault();
-  if (!['close', 'qclose', 'cclose', 'obskip', 'src'].includes(a)) lastFocus = el;
+  // Track citation triggers too, so closing the drawer restores focus to them.
+  if (!['close', 'qclose', 'cclose', 'obskip'].includes(a)) lastFocus = el;
   switch (a) {
     case 'lang': setLang(+d.i); break;
     case 'theme': STATE.theme = d.v; save(); render(); break;
@@ -113,7 +143,7 @@ document.addEventListener('click', async ev => {
     case 'lp': VIEW.lp = +d.i; render(); break;
     case 'ask': VIEW.qs = null; ask(d.q, d.qa || null); break;
     case 'clear': VIEW.thread = []; render(); break;
-    case 'src': VIEW.drawer = { type: 'src', turn: d.turn, i: +d.i }; renderOv(); break;
+    case 'src': VIEW.drawer = { type: 'src', turn: d.turn, i: +d.i }; track('citation_opened'); renderOv(); break;
     case 'doc': VIEW.drawer = { type: 'doc', id: d.id }; VIEW.qs = null; renderOv(); break;
     case 'close': case 'qclose': case 'cclose': case 'obskip': closeOverlay(); break;
     case 'copy': copyText(plainAnswer(turnOf(d.turn))); break;
@@ -136,7 +166,7 @@ document.addEventListener('click', async ev => {
     case 'rerun': { const g = STATE.gaps.find(x => x.id === d.id); ask(gapQ(g), g.qa); break; }
     case 'rm': VIEW.confirm = { id: d.id }; renderOv(); break;
     case 'rmgo': {
-      if (d.id === '__reset') { LS.del('altheia.state'); Object.assign(STATE, { history: seedHistory(), gaps: seedGaps(), feedback: {}, removed: [], uploads: [], liveTop: {}, settings: { threshold: 0.6, maxSources: 3, details: true, endpoint: '', useDemo: true, scripted: false, ai: false, semThr: 0.86 }, onboarded: true }); VIEW.thread = []; VIEW.confirm = null; VIEW.drawer = null; rebuild(); save(); render(); toast(t('toast.reset')); break; }
+      if (d.id === '__reset') { resetAll(); break; }
       const nm = (docById(d.id) || {}).name; if (DEMO_DOCS.find(x => x.id === d.id)) STATE.removed.push(d.id); else STATE.uploads = STATE.uploads.filter(u => u.id !== d.id);
       VIEW.confirm = null; VIEW.drawer = null; rebuild(); save(); render(); toast(t('toast.removed', nm)); break; }
     case 'retry': { const f = FILES.get(d.id); if (f) { VIEW.drawer = null; processUpload(f, d.id); } else toast(t('toast.reupload'), 'err'); break; }
@@ -150,7 +180,7 @@ document.addEventListener('click', async ev => {
       render(); break; }
     case 'tdetails': STATE.settings.details = !STATE.settings.details; save(); render(); break;
     case 'maxsrc': STATE.settings.maxSources = +d.v; save(); render(); break;
-    case 'saveep': { const v = $('#endpoint').value.trim(); if (v && !/^https?:\/\//i.test(v)) { toast(t('toast.badurl'), 'err'); break; } STATE.settings.endpoint = v; save(); render(); toast(v ? t('toast.ep.on') : t('toast.ep.off')); break; }
+    case 'saveep': saveEndpoint($('#endpoint').value); break;
     case 'tdemo': STATE.settings.useDemo = !STATE.settings.useDemo; VIEW.thread = []; rebuild(); save(); render(); toast(STATE.settings.useDemo ? t('toast.demo.on') : t('toast.demo.off')); break;
     case 'tscripted': STATE.settings.scripted = !STATE.settings.scripted; VIEW.thread = []; save(); render(); toast(t(STATE.settings.scripted ? 'toast.scripted.on' : 'toast.scripted.off')); break;
     case 'reset': VIEW.confirm = { reset: true }; renderOv(); break;
@@ -172,6 +202,22 @@ document.addEventListener('change', ev => {
 document.addEventListener('keydown', ev => {
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'k') { ev.preventDefault(); if (VIEW.route === '/') return go('/app'); VIEW.qs = VIEW.qs ? null : { q: '', sel: 0 }; renderOv(); return; }
   if (ev.key === 'Escape' && closeOverlay()) { ev.preventDefault(); return; }
+  if (ev.target && ev.target.dataset && ev.target.dataset.act === 'gtab' && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft')) {
+    ev.preventDefault();
+    const tabs = ['open', 'resolved', 'all'], i = tabs.indexOf(VIEW.gapTab);
+    VIEW.gapTab = tabs[(i + (ev.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+    render(); document.getElementById('gap-tab-' + VIEW.gapTab)?.focus(); return;
+  }
+  if (ev.key === 'Tab') {
+    const ov = $('#ov'), root = ov && ov.firstElementChild;
+    const f = root ? [...ov.querySelectorAll('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')] : [];
+    if (f.length) {
+      const first = f[0], last = f[f.length - 1];
+      if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+      else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+      else if (!ov.contains(document.activeElement)) { ev.preventDefault(); first.focus(); }
+    }
+  }
   if (VIEW.qs) {
     const n = qsItems().length;
     if (ev.key === 'ArrowDown') { ev.preventDefault(); VIEW.qs.sel = (VIEW.qs.sel + 1) % n; renderOv(); }
@@ -185,7 +231,12 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => ST
 
 /* ---------- boot ---------- */
 STATE.uploads.forEach(u => { if (u.status === 'processing') { u.status = 'failed'; u.error = 'interrupted'; } });
-setInterval(() => { const el = $('#tour-clock'); if (el && VIEW.tour != null) el.textContent = tourClock(); }, 1000);
+setInterval(() => {
+  const el = $('#tour-clock'); if (!el || VIEW.tour == null) return;
+  const s = tourSeconds();
+  el.textContent = s > 0 ? clockText(s) : t('tour.timeup');
+  el.classList.toggle('warnc', s === 0);
+}, 1000);
 Augment.on(() => { const el = $('#ai-status'); if (el) el.textContent = aiStatusText(); });
 rebuild(); route();
 if (STATE.settings.ai) Augment.enable().then(ok => { if (ok) Augment.indexChunks(allChunks(), LANG); });

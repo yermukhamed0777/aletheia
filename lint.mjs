@@ -1,6 +1,7 @@
 /* Cheap source lint for Aletheia. Run: node lint.mjs */
 import fs from 'node:fs';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 
 const problems = [];
@@ -32,9 +33,35 @@ for (const f of files) {
   ok(!/\brequire\s*\(/.test(source), 'require() in src/' + f + ' would break the browser bundle');
 }
 
+// Removed fabricated-state and remote-doc globals must never come back.
+const LEGACY = ['REMOTE_DOCS', 'SEED_DAYS', 'SEED_TOP', 'liveTop', 'seedHistory', 'seedGaps'];
+for (const f of files) {
+  const source = fs.readFileSync('src/' + f, 'utf8');
+  for (const g of LEGACY) ok(!new RegExp('\\b' + g + '\\b').test(source), 'legacy global ' + g + ' in src/' + f);
+}
+
+// All view copy must come from strings.js (CLAUDE.md convention, P0-4).
+for (const f of ['interface.js', 'pages.js', 'controller.js']) {
+  const source = fs.readFileSync('src/' + f, 'utf8');
+  ok(!source.includes('Ctrl K'), 'hard-coded Ctrl K in src/' + f);
+  ok(!/'Esc'/.test(source) && !/>Esc</.test(source), 'hard-coded Esc in src/' + f);
+  ok(!source.includes(' · OCR'), 'hard-coded OCR badge in src/' + f);
+  ok(!/' ms'/.test(source), 'hard-coded ms unit in src/' + f);
+}
+
+// Vendored pdf.js blobs are pinned (P1-3). A silent upgrade is a supply-chain change.
+const VENDOR_HASH = {
+  'pdf.min.mjs': '3f2374cbc1639408d65f517003bb8dd6671775f6592dc9fa2a7b686246d4830e',
+  'pdf.worker.min.mjs': '8b855be66d4dbeb4a9e8950656eb0f22d83645febef73818d4e42f4dbe72b64d',
+};
+for (const [f, hash] of Object.entries(VENDOR_HASH)) {
+  const actual = crypto.createHash('sha256').update(fs.readFileSync('vendor/' + f)).digest('hex');
+  ok(actual === hash, 'vendor/' + f + ' hash changed: ' + actual);
+}
+
 if (problems.length) {
   console.error('LINT FAILED (' + problems.length + ')');
   for (const p of problems) console.error(' - ' + p);
   process.exit(1);
 }
-console.log('LINT PASSED — ' + files.length + ' source files parsed, bundle order and tracked-file guards verified');
+console.log('LINT PASSED — ' + files.length + ' source files parsed, bundle order, tracked-file, view-copy, legacy-global and 2 pinned vendor hashes verified');

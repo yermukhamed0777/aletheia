@@ -23,17 +23,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Smoke check
+          cache: npm
+      - name: Install dev dependencies
+        run: npm ci
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Smoke check (includes unit harness)
         run: node check.mjs
       - name: Source lint
         run: node lint.mjs
       - name: Validation eval
         run: node eval.mjs
+      - name: Fast unit harness
+        run: node unit.mjs
       - name: Build static bundle
         run: node bundle.mjs
+      - name: Browser smoke (root + subpath)
+        run: node e2e.mjs
       - name: Upload built site
         uses: actions/upload-artifact@v4
         with:
           name: aletheia-dist
-          path: dist/index.html
+          path: |
+            dist/index.html
+            artifacts/walkthrough-ask.png
           if-no-files-found: error

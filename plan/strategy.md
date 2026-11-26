@@ -44,9 +44,11 @@ not a medical device. Differentiators that must survive every future change:
 | Metric | Measured value | Source |
 |---|---|---|
 | Corpus | 7 sources, 22 passages, 39 questions (34 answerable, 5 abstain) | `node check.mjs` + read-only VM count |
-| Strings | 436 defined triples; 329 literal `t()` keys used | `node check.mjs` |
-| Source files | 9 `.js` files parsed by lint | `node lint.mjs` |
-| Built bundle | 2635 KB, deterministic (SHA-256 identical across two rebuilds; hash before later source edits) | `Get-FileHash dist/index.html` + `node bundle.mjs` |
+| Strings | 436 defined triples; 334 literal `t()` keys used | `node check.mjs` |
+| Source files | 10 `.js` files parsed by lint (added `events.js`) | `node lint.mjs` |
+| Built bundle | 2638 KB, deterministic SHA-256 `4F587DD38B7885D0F164237D7CCF8160E5FAAB0EACD7288EEF95B015AF7D0642` across two rebuilds | `Get-FileHash dist/index.html` + `node bundle.mjs` |
+| Unit harness | 39/39 checks passed (was 21/39 before the fixes) | `node unit.mjs` |
+| Browser e2e | 13/13 checks passed, root + `/sub/`, zero console errors, zero external requests | `node e2e.mjs` |
 | Validation | 50/72 correct (69.4%): dev 19/30, fresh 16/20, heldout1 15/22 | `node eval.mjs` |
 | CI | Two runs on `main`, both `success` | `gh run list --repo yermukhamed0777/aletheia` |
 | Repo | `yermukhamed0777/aletheia`, public | `gh repo view ... --json visibility` |
@@ -72,9 +74,10 @@ not a medical device. Differentiators that must survive every future change:
 2. **Low measured accuracy**: 69.4% on small validation sets. The sets are
    indicative, not a benchmark, and many expected substrings are
    language-specific; treat the number as a regression floor, not a quality bar.
-3. **No browser-level tests**: `check.mjs` executes only the pure layer; six
-   source files are parsed for syntax but never booted. The remote-answer crash
-   found in audit A could not have been caught by CI.
+3. **Browser-level tests now exist** (2026-11-26): `unit.mjs` boots all ten
+   sources in a VM with DOM stubs and `e2e.mjs` drives a real Chromium page.
+   The earlier remote-answer crash is covered by both. Residual risk: full
+   accessibility is not audited, and the Windows CI runner is still open (M2-3).
 4. **Privacy**: uploaded text, questions and gaps persist unencrypted in
    `localStorage`; a user-configured backend URL may be plain `http://`.
 5. **Licence ambiguity resolved for now**: public visibility with all rights
@@ -99,3 +102,4 @@ not a medical device. Differentiators that must survive every future change:
 |---|---|---|---|
 | 2026-11-25 | Repository and deploy session (earlier in this conversation) | Renamed `yermukhamed0777/knowledge-base` → `aletheia`; set public, description and topics; added `origin`, renamed local branch to `main`, lease-protected force push replacing old remote content; added CI, issue/PR templates, handoff notes; created Vercel project `erm1ham3d2204-2491/aletheia`, linked GitHub, deployed production, verified public URL; added CI badge and live URL to README. | `gh repo view yermukhamed0777/aletheia --json nameWithOwner,visibility,description,url,defaultBranchRef` → `PUBLIC`; `git push --force-with-lease origin main` → `+ 7b9194f...33ed442 main -> main (forced update)`; Vercel deploy JSON `readyState: READY`, production URL `https://aletheia-nine-iota.vercel.app`; `gh run list` → two `success` runs. |
 | 2026-11-25 | Audit and hardening session (current) | Three read-only audits (core/data, UI/i18n/docs, tests/CI/packaging). Hardened `check.mjs` (build guard, exact counts, unique QA ids, triple validation, double-quoted `t()` keys); added `lint.mjs` and `eval.mjs` with a measured gate of 0.694; added CI permissions/concurrency/timeout/workflow_dispatch and staged check→lint→eval→build + artifact; added `LICENSE`, `THIRD_PARTY_NOTICES`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `verify.cmd`; fixed remote-answer crash, remote citation location loss, settings rehydration bug, 30 MiB cap copy, five untranslated toasts, sample-source description, privacy claims and 436-vs-329 metric wording; created this `plan/` folder. | `node check.mjs`, `node lint.mjs`, `node eval.mjs`, `node bundle.mjs` outputs recorded in `plan/progress.md`; audit findings cited with `file:line` in `plan/backlog.md`. |
+| 2026-11-26 | Completion session (current) | Completed the interrupted working-tree refactor; made remote evidence self-contained; added `harness.mjs`, `unit.mjs` (39 checks), `e2e.mjs` (13 checks), content-free `events.js`, HTTPS-only backend URLs, quota-safe uploads, focus/ARIA fixes, pinned vendor hashes and CV-ready docs. | `node unit.mjs` → 39/39 (baseline 21/39); `.\verify.cmd` → all six commands exit 0; `curl.exe -sSI` → three production headers; deterministic bundle hash recorded in `progress.md`. |

@@ -17,7 +17,12 @@
     "check": "node check.mjs",
     "lint": "node lint.mjs",
     "eval": "node eval.mjs",
-    "verify": "node check.mjs && node lint.mjs && node eval.mjs && node bundle.mjs",
+    "unit": "node unit.mjs",
+    "e2e": "node e2e.mjs",
+    "verify": "node check.mjs && node lint.mjs && node eval.mjs && node bundle.mjs && node e2e.mjs",
     "start": "node bundle.mjs && npx --yes serve dist"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
   }
 }

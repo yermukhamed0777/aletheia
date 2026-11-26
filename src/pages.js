@@ -33,15 +33,17 @@ function metaKV(d, extra) {
 }
 function srcDrawer() {
   const turn = VIEW.thread.find(x => x.id === VIEW.drawer.turn); if (!turn) return '';
-  const evs = turn.result.evidence, i = VIEW.drawer.i, ev = evs[i], d = docById(ev.chunk.doc), sib = docChunks(d.id), pos = sib.findIndex(c => c.id === ev.chunk.id);
+  const evs = turn.result.evidence, i = VIEW.drawer.i, ev = evs[i], d = sourceOf(ev);
+  if (!d) return '';
+  const sib = d.remote ? [ev.chunk] : docChunks(d.id), pos = sib.findIndex(c => c.id === ev.chunk.id);
   const prev = pos > 0 ? sib[pos - 1] : null, next = pos < sib.length - 1 ? sib[pos + 1] : null;
   const ctx = c => c ? `<p class="ctx">${esc(lt(c, c === prev ? c.lines.length - 1 : 0))}</p>` : '';
   return `<div class="scrim" data-act="close"></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(t('src.title'))}"><div class="hd"><span class="ev-n">${i + 1}</span><div class="grow"><div class="eyebrow">${esc(t('src.title'))}</div><b>${esc(d.name)}</b></div><button class="btn icon ghost" data-act="close" aria-label="${esc(t('close'))}" id="drawer-x">${ic('x')}</button></div>
   <div class="bd col" style="gap:18px"><div class="row wrap"><span class="badge info">${esc(locLabel(ev.chunk.loc))}</span>${evs.length > 1 ? `<span class="muted">${esc(t('src.of', i + 1, evs.length))}</span>` : ''}</div>
   <div><div class="eyebrow" style="margin-bottom:6px">${esc(t('src.passage'))}</div><div class="excerpt">${ctx(prev)}<p>${hlLines(ev, false)}</p>${ctx(next)}</div><p class="muted" style="font-size:12px;margin-top:6px">${ic('info', 'sm')} ${esc(t('src.hl'))}</p></div>
   <div><div class="eyebrow" style="margin-bottom:6px">${esc(t('src.meta'))}</div>${metaKV(d, [[t('src.loc'), locLabel(ev.chunk.loc)], [t('src.chunk'), `${pos + 1} / ${sib.length}`]])}</div>
-  ${evs.length > 1 ? `<div><div class="eyebrow" style="margin-bottom:6px">${esc(t('src.all'))}</div>${evs.map((e, k) => `<button class="ev-card" style="grid-template-columns:22px 1fr;${k === i ? 'border-color:var(--accent)' : ''}" data-act="src" data-turn="${turn.id}" data-i="${k}"><span class="ev-n">${k + 1}</span><span class="ev-t"><b>${esc(docById(e.chunk.doc).name)}</b><span class="badge">${esc(locLabel(e.chunk.loc))}</span></span></button>`).join('')}</div>` : ''}</div>
-  <div class="ft"><button class="btn" data-act="copyone" data-turn="${turn.id}" data-i="${i}">${ic('copy', 'sm')}${esc(t('src.copy'))}</button><button class="btn" data-act="doc" data-id="${esc(d.id)}">${esc(t('src.opendoc'))}</button><span class="grow"></span>
+  ${evs.length > 1 ? `<div><div class="eyebrow" style="margin-bottom:6px">${esc(t('src.all'))}</div>${evs.map((e, k) => `<button class="ev-card" style="grid-template-columns:22px 1fr;${k === i ? 'border-color:var(--accent)' : ''}" data-act="src" data-turn="${turn.id}" data-i="${k}"><span class="ev-n">${k + 1}</span><span class="ev-t"><b>${esc((sourceOf(e) || {}).name || '')}</b><span class="badge">${esc(locLabel(e.chunk.loc))}</span></span></button>`).join('')}</div>` : ''}</div>
+  <div class="ft"><button class="btn" data-act="copyone" data-turn="${turn.id}" data-i="${i}">${ic('copy', 'sm')}${esc(t('src.copy'))}</button>${d.remote ? '' : `<button class="btn" data-act="doc" data-id="${esc(d.id)}">${esc(t('src.opendoc'))}</button>`}<span class="grow"></span>
   <button class="btn icon" data-act="src" data-turn="${turn.id}" data-i="${(i - 1 + evs.length) % evs.length}" aria-label="${esc(t('prev'))}" ${evs.length < 2 ? 'disabled' : ''}>${ic('left')}</button><button class="btn icon" data-act="src" data-turn="${turn.id}" data-i="${(i + 1) % evs.length}" aria-label="${esc(t('next'))}" ${evs.length < 2 ? 'disabled' : ''}>${ic('right')}</button></div></aside>`;
 }
 function docDrawer() {
@@ -77,8 +79,8 @@ function qsItems() {
 }
 function qsView() {
   const items = qsItems(); VIEW.qs.sel = Math.min(VIEW.qs.sel, Math.max(0, items.length - 1)); let last = '';
-  return `<div class="scrim" data-act="qclose"></div><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(t('qs.btn'))}"><div class="row" style="padding:12px 16px;border-bottom:1px solid var(--line)"><span class="muted">${ic('search')}</span><input id="qs-in" class="grow" style="border:0;outline:0;background:none;font-size:16px;height:32px" placeholder="${esc(t('qs.ph'))}" value="${esc(VIEW.qs.q)}" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="qs-list" aria-label="${esc(t('qs.btn'))}"><span class="kbd">Esc</span></div>
-  <div class="res" id="qs-list" role="listbox">${items.map((it, i) => { const h = it.g !== last ? `<div class="grp">${esc(it.g)}</div>` : ''; last = it.g; return h + `<button class="it" role="option" aria-selected="${i === VIEW.qs.sel}" data-act="qrun" data-i="${i}"><span class="muted">${ic(it.icon, 'sm')}</span><span class="grow">${esc(it.label)}</span>${it.sub ? `<span class="muted" style="font-size:12px">${esc(it.sub)}</span>` : ''}</button>`; }).join('') || `<div class="empty">${esc(t('qs.none'))}</div>`}</div></div>`;
+  return `<div class="scrim" data-act="qclose"></div><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(t('qs.btn'))}"><div class="row" style="padding:12px 16px;border-bottom:1px solid var(--line)"><span class="muted">${ic('search')}</span><input id="qs-in" class="grow" style="border:0;outline:0;background:none;font-size:16px;height:32px" placeholder="${esc(t('qs.ph'))}" value="${esc(VIEW.qs.q)}" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="qs-list" aria-activedescendant="qs-opt-${VIEW.qs.sel}" aria-label="${esc(t('qs.btn'))}"><span class="kbd">${esc(t('qs.esc'))}</span></div>
+  <div class="res" id="qs-list" role="listbox">${items.map((it, i) => { const h = it.g !== last ? `<div class="grp">${esc(it.g)}</div>` : ''; last = it.g; return h + `<button class="it" id="qs-opt-${i}" role="option" aria-selected="${i === VIEW.qs.sel}" data-act="qrun" data-i="${i}"><span class="muted">${ic(it.icon, 'sm')}</span><span class="grow">${esc(it.label)}</span>${it.sub ? `<span class="muted" style="font-size:12px">${esc(it.sub)}</span>` : ''}</button>`; }).join('') || `<div class="empty">${esc(t('qs.none'))}</div>`}</div></div>`;
 }
 
 /* ---------- onboarding & tour ---------- */
@@ -92,7 +94,7 @@ const TOUR_N = 7;
 function coachView() {
   const i = VIEW.tour;
   return `<div class="coach" role="dialog" aria-label="${esc(t('tour.label'))}" aria-live="polite"><div class="pg">${Array.from({ length: TOUR_N }, (_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('')}</div>
-  <div class="row between"><div class="eyebrow" style="opacity:.7">${esc(t('tour.step', i + 1, TOUR_N))}</div><div class="mono" id="tour-clock" title="${esc(t('tour.clock'))}" style="opacity:.85">${tourClock()}</div></div><h3 style="margin:4px 0 6px;font-size:16px">${esc(t('tour.' + i + '.t'))}</h3><p style="font-size:13px;opacity:.85">${esc(t('tour.' + i + '.d'))}</p>
+  <div class="row between"><div class="eyebrow" style="opacity:.7">${esc(t('tour.step', i + 1, TOUR_N))}</div><div class="mono" id="tour-clock" title="${esc(t('tour.clock'))}" style="opacity:.85">${clockText(tourSeconds())}</div></div><h3 style="margin:4px 0 6px;font-size:16px">${esc(t('tour.' + i + '.t'))}</h3><p style="font-size:13px;opacity:.85">${esc(t('tour.' + i + '.d'))}</p>
   <div class="row between" style="margin-top:14px"><button class="btn sm ghost" data-act="tourend">${esc(t('tour.skip'))}</button><button class="btn sm" data-act="tournext" id="tour-go" ${VIEW.tourBusy ? 'disabled' : ''}>${esc(i === TOUR_N - 1 ? t('tour.done') : t('next'))} ${ic('arrow', 'sm')}</button></div></div>`;
 }
 function overlays() {
@@ -105,4 +107,6 @@ function overlays() {
   return h;
 }
 
-function tourClock() { const s = Math.max(0, 180 - Math.floor((Date.now() - (VIEW.tourT0 || Date.now())) / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function tourSeconds() { return Math.max(0, 180 - Math.floor((Date.now() - (VIEW.tourT0 || Date.now())) / 1000)); }
+const clockText = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+const tourClock = () => clockText(tourSeconds());

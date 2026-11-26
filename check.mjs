@@ -73,6 +73,15 @@ for (const f of fs.readdirSync('validation').filter(x => x.endsWith('.json'))) {
   ok(Array.isArray(j.ans) && Array.isArray(j.idk), f + ' must contain ans and idk arrays');
 }
 
+// 6. Fast unit harness: boots every source file and exercises lazy paths that
+//    syntax checks cannot reach (remote answers, upload quota, reset, analytics).
+const unit = spawnSync(process.execPath, ['unit.mjs'], { encoding: 'utf8' });
+process.stdout.write(unit.stdout || '');
+if (unit.status !== 0) {
+  process.stderr.write(unit.stderr || '');
+  problems.push('unit.mjs exited ' + unit.status);
+}
+
 if (problems.length) {
   console.error('CHECK FAILED (' + problems.length + ')');
   for (const p of problems) console.error(' - ' + p);

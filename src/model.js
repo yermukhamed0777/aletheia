@@ -1,5 +1,4 @@
 /* Core: icons, helpers, persisted state, derived data and the ask() pipeline. */
-const REMOTE_DOCS = new Map();
 const GLYPH = {
   search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
@@ -37,6 +36,7 @@ const GLYPH = {
 const ic = (n, c = '') => `<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${GLYPH[n] || ''}</svg>`;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const kbdMod = () => /Mac|iPhone|iPad|iPod/i.test((navigator.platform || '') + (navigator.userAgent || '')) ? '⌘' : 'Ctrl';
 const LANGS = [['en', 'EN', 'English'], ['ru', 'RU', 'Русский'], ['kk', 'ҚАЗ', 'Қазақша']];
 const LOCALES = ['en-GB', 'ru-RU', 'kk-KZ'];
 
@@ -67,20 +67,32 @@ const LS = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
-// no fabricated usage data: history, unanswered questions and analytics start empty and fill only from real use
-function seedHistory() { return []; }
-function seedGaps() { return []; }
-const SEED_DAYS = { ans: new Array(14).fill(0), gap: new Array(14).fill(0) };
-const SEED_TOP = {};
-
 const DEFAULT_SETTINGS = { threshold: 0.6, maxSources: 3, details: true, endpoint: '', useDemo: true, scripted: false, ai: false, semThr: 0.86 };
-let STATE = Object.assign({
-  lang: 0, theme: 'system', onboarded: false,
-  history: seedHistory(), gaps: seedGaps(), feedback: {}, removed: [], uploads: [], liveTop: {},
-  settings: DEFAULT_SETTINGS,
-}, LS.get('altheia.state', {}));
-STATE.settings = Object.assign({}, DEFAULT_SETTINGS, STATE.settings);
-function save() { return LS.set('altheia.state', STATE); }
+function freshState() {
+  return {
+    lang: 0, theme: 'system', onboarded: false, history: [], gaps: [], feedback: {},
+    removed: [], uploads: [], settings: { ...DEFAULT_SETTINGS },
+  };
+}
+function backendURL(value) {
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    if (url.username || url.password || url.hash) return null;
+    return url.protocol === 'https:' || (local && url.protocol === 'http:') ? url.href : null;
+  } catch { return null; }
+}
+const STORAGE_KEY = 'altheia.state';
+// Whitelist persisted keys: unknown legacy fields (e.g. fabricated analytics)
+// are discarded instead of being merged back into state.
+const STATE_KEYS = ['lang', 'theme', 'onboarded', 'history', 'gaps', 'feedback', 'removed', 'uploads', 'settings'];
+const LOADED = LS.get(STORAGE_KEY, {});
+let STATE = freshState();
+for (const k of STATE_KEYS) if (Object.prototype.hasOwnProperty.call(LOADED, k)) STATE[k] = LOADED[k];
+STATE.settings = { ...DEFAULT_SETTINGS, ...STATE.settings, endpoint: backendURL(STATE.settings?.endpoint) || '' };
+function save() { return VIEW.tourSession ? true : LS.set(STORAGE_KEY, STATE); }
+if (!LANGS[STATE.lang]) STATE.lang = 0;
 LANG = STATE.lang;
 
 /* ---------- derived data ---------- */
@@ -93,7 +105,6 @@ function docList() {
   const ups = STATE.uploads.map(u => Object.assign({}, u, { chunks: u.chunks ? u.chunks.length : 0 }));
   return [...ups.slice().reverse(), ...demo];
 }
-function liveDocs() { return docList(); }
 function allChunks() {
   const out = [];
   if (STATE.settings.useDemo) CORPUS.CHUNKS.forEach(c => { if (!STATE.removed.includes(c.doc)) out.push(c); });
@@ -104,7 +115,7 @@ function allChunks() {
 function docById(id) {
   const d = DEMO_DOCS.find(x => x.id === id);
   if (d) return { id: d.id, name: d.name, type: d.type, size: d.size, ts: Date.now() - d.ago * DAY, pages: d.pages, sheets: d.sheets, rows: d.rows, demo: true, category: d.cat };
-  return REMOTE_DOCS.get(id) || STATE.uploads.find(u => u.id === id);
+  return STATE.uploads.find(u => u.id === id);
 }
 function chunkById(id) { return allChunks().find(c => c.id === id); }
 function rebuild() { INDEX = Retrieval.buildIndex(allChunks()); if (typeof Augment !== 'undefined' && STATE.settings.ai && Augment.ready()) Augment.indexChunks(allChunks(), LANG); }
@@ -121,15 +132,21 @@ function locLabel(loc) {
   if (loc.para) return t('loc.para', loc.para);
   return '';
 }
-function citeStr(chunk) { const d = docById(chunk.doc); return `${d ? d.name : '?'} — ${locLabel(chunk.loc)}`; }
+function citeStr(chunk, source = docById(chunk.doc)) { return `${source?.name || '?'} — ${locLabel(chunk.loc)}`; }
 const lt = (chunk, i) => Retrieval.lineText(chunk, i, LANG);
+// Remote answers carry their source inside the turn, never in a global map and
+// never in localStorage. Local evidence resolves its source from state.
+function makeEvidence(chunk, lines, source = docById(chunk.doc)) { return { chunk, lines, source }; }
+const sourceOf = ev => ev && (ev.source || docById(ev.chunk.doc));
 
 /* ---------- ask pipeline ---------- */
-function topicOf(q) { return q.topic || 'general'; }
-function normKey(q) { return Retrieval.tokens(q).map(t => t.s).sort().join(' '); }
+function normKey(q) { return Retrieval.tokens(q).map(t => t.s).sort().join(' ') || q.toLowerCase(); }
 
 function evidenceFrom(pairs) {
-  return pairs.map(([cid, lines]) => ({ chunk: chunkById(cid), lines })).filter(e => e.chunk);
+  return pairs.flatMap(([cid, lines]) => {
+    const chunk = chunkById(cid);
+    return chunk ? [makeEvidence(chunk, lines)] : [];
+  });
 }
 function resolveQuestion(q, qaId) {
   const t0 = performance.now();
@@ -137,9 +154,7 @@ function resolveQuestion(q, qaId) {
   const hasUploads = STATE.uploads.some(u => u.status === 'processed');
   if (qa) {
     const ev = evidenceFrom(qa.ev || []);
-    const intact = ev.length === (qa.ev || []).length;
-    const needDocs = (qa.ev || []).every(([cid]) => chunkById(cid));
-    if (!qa.abstain && needDocs) {
+    if (!qa.abstain && ev.length === qa.ev.length) {
       return { kind: 'curated', qa, evidence: ev, strength: qa.strength, conflict: qa.conflict, ms: performance.now() - t0, scanned: INDEX.N, coverage: 1, topic: qa.topic };
     }
     if (qa.abstain && !hasUploads) {
@@ -150,10 +165,10 @@ function resolveQuestion(q, qaId) {
   const r = Retrieval.search(INDEX, q, { threshold: STATE.settings.threshold, maxSources: STATE.settings.maxSources, lang: LANG });
   if (r.status === 'answer') {
     const best = r.hits[0];
-    return { kind: 'extractive', q, lineCov: r.lineCov, partial: r.partial, hits: r.hits, evidence: r.hits.map(h => ({ chunk: h.chunk, lines: h.lines })), strength: r.strength, coverage: r.coverage, ms: r.ms, scanned: r.scanned, missing: r.missing, topic: best.chunk.topic };
+    return { kind: 'extractive', q, lineCov: r.lineCov, partial: r.partial, hits: r.hits, evidence: r.hits.map(h => makeEvidence(h.chunk, h.lines)), strength: r.strength, coverage: r.coverage, threshold: STATE.settings.threshold, ms: r.ms, scanned: r.scanned, missing: r.missing, topic: best.chunk.topic };
   }
   const relDocs = [...new Set((r.related || []).map(c => c.doc))];
-  return { kind: 'abstain', reason: r.reason, related: qa?.abstain ? qa.related : relDocs, qa: qa && qa.abstain ? qa : null, missing: r.missing, coverage: r.coverage, ms: r.ms, scanned: r.scanned, evidence: [], topic: qa?.topic || 'general' };
+  return { kind: 'abstain', reason: r.reason, related: qa?.abstain ? qa.related : relDocs, qa: qa && qa.abstain ? qa : null, missing: r.missing, coverage: r.coverage, threshold: STATE.settings.threshold, ms: r.ms, scanned: r.scanned, evidence: [], topic: qa?.topic || 'general' };
 }
 
 async function resolveQuestionAsync(q, qaId) {
@@ -168,21 +183,20 @@ async function resolveQuestionAsync(q, qaId) {
   const good = top.filter(x => x.sim >= thr && x.lines && x.lines.length);
   if (!good.length) { r.ms += performance.now() - t0; return r; }
   const hits = good.map(x => ({ chunk: x.chunk, lines: x.lines, score: x.sim, best: { i: x.bestLine ?? x.lines[0] } }));
-  return { kind: 'extractive', q, partial: true, semantic: true, hits, evidence: hits.map(h => ({ chunk: h.chunk, lines: h.lines })), strength: 'limited', coverage: top[0].sim, ms: r.ms + performance.now() - t0, scanned: chunks.length, missing: [], topic: good[0].chunk.topic, sem: r.sem };
+  return { kind: 'extractive', q, partial: true, semantic: true, hits, evidence: hits.map(h => makeEvidence(h.chunk, h.lines)), strength: 'limited', coverage: top[0].sim, threshold: thr, ms: r.ms + performance.now() - t0, scanned: chunks.length, missing: [], topic: good[0].chunk.topic, sem: r.sem };
 }
 
 function logResult(turn) {
   const r = turn.result, abst = r.kind === 'abstain';
   const entry = { id: 'h' + Date.now() + Math.random().toString(36).slice(2, 5), ts: Date.now(), q: turn.q, qa: r.qa ? r.qa.id : null, status: abst ? 'abstain' : 'answer', ms: Math.round(r.ms * 10) / 10 };
   STATE.history.unshift(entry); STATE.history = STATE.history.slice(0, 200);
-  const key = r.qa ? r.qa.id : normKey(turn.q);
-  if (!abst) STATE.liveTop[key] = { n: ((STATE.liveTop[key] || {}).n || 0) + 1, q: turn.q, qa: r.qa ? r.qa.id : null };
   if (abst) {
+    const key = r.qa ? r.qa.id : normKey(turn.q);
     const g = STATE.gaps.find(x => (x.qa && x.qa === entry.qa) || (!x.qa && x.key === key));
     if (g) { g.count++; g.ts = Date.now(); g.missing = r.missing; g.reasonKind = r.reason; g.related = r.related; if (g.status === 'resolved') g.status = 'open'; }
-    else STATE.gaps.unshift({ id: 'g' + Date.now(), qa: entry.qa, key, q: entry.qa ? null : turn.q, ts: Date.now(), count: 1, status: 'open', missing: r.missing, reasonKind: r.reason, related: r.related });
+    else { STATE.gaps.unshift({ id: entry.id, qa: entry.qa, key, q: entry.qa ? null : turn.q, ts: Date.now(), count: 1, status: 'open', missing: r.missing, reasonKind: r.reason, related: r.related }); track('gap_logged'); }
   }
-  save();
+  return save();
 }
 
 /* ---------- uploads (real client-side parsing) ---------- */
@@ -387,12 +401,16 @@ async function processUpload(file, existingId) {
     Object.assign(doc, res.info); doc.chars = doc.chunks.reduce((a, c) => a + c.lines.join(' ').length, 0);
     await step(88, 'index');
     doc.status = 'processed'; doc.progress = 100; doc.stage = 'done'; rebuild();
-    UI.toast(t('toast.processed', doc.name, doc.chunks.length));
+    UI.toast(t('toast.processed', doc.name, doc.chunks.length)); track('upload_processed');
   } catch (e) {
     doc.status = 'failed'; doc.progress = 100; doc.error = e.code || 'parse'; doc.chunks = [];
-    UI.toast(t('toast.failed', doc.name), 'err');
+    UI.toast(t('toast.failed', doc.name), 'err'); track('upload_failed');
   }
-  if (!save()) { UI.toast(t('toast.storage'), 'err'); }
+  // A document that cannot be persisted must never claim to be a usable source.
+  if (!save()) {
+    if (doc.status === 'processed') { doc.status = 'failed'; doc.error = 'storage'; doc.chunks = []; rebuild(); }
+    UI.toast(t('toast.storage'), 'err');
+  }
   UI.refresh();
 }
 

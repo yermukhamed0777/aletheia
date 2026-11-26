@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 const read = f => fs.readFileSync(new URL('./src/' + f, import.meta.url), 'utf8');
-const js = ['corpus.js', 'retrieval.js', 'augment.js', 'strings.js', 'pdfreader.js', 'model.js', 'interface.js', 'pages.js', 'controller.js'].map(read).join('\n;\n');
+const js = ['corpus.js', 'retrieval.js', 'augment.js', 'strings.js', 'events.js', 'pdfreader.js', 'model.js', 'interface.js', 'pages.js', 'controller.js'].map(read).join('\n;\n');
 const b64 = f => fs.readFileSync(new URL('./vendor/' + f, import.meta.url)).toString('base64');
 const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">

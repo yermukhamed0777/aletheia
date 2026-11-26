@@ -10,6 +10,15 @@ Status and measured numbers live in `plan/strategy.md`; executable IDs live in
 These are the steps the assistant takes next. Each is small enough for one
 session and must end with a recorded command and result.
 
+**Status 2026-11-26:** P0-1…P0-9 are done and evidenced in `progress.md`. P0-10
+(complete the interrupted refactor), P0-11 (content-free counters) and P0-12
+(CV docs) were added and done in the same session. P1-2 and P1-3 are done.
+Only P1-1 remains open here, and it requires a measured improvement before the
+eval floor may move. The human confirmations listed in the original items
+(real backend field names, HTTPS-only policy, RU/KK keycap wording, approved
+embedding) remain human-owned; defensible defaults were implemented and
+recorded in `decisions.md` where the choice was reversible.
+
 1. **P0-1 — Prove the remote-answer path cannot crash the UI.**
    - Intelligence: add an automated regression that mocks `fetch`, runs the
      remote branch of `remoteAsk()` (`src/controller.js:51-60`) through the
@@ -72,10 +81,12 @@ session and must end with a recorded command and result.
 - Intelligence: prepare a read-only evaluation harness that accepts a real
   document set, records citations and abstentions, and produces a per-question
   audit CSV; add browser-level tests for upload → citation → gap resolution;
-  add a sanitised export of knowledge gaps.
+  add a sanitised export of knowledge gaps. **2026-11-26:** the content-free
+  counter harness, Playwright walkthrough and `PILOT_HANDOFF.md` are ready;
+  the audit CSV schema and gap export remain unbuilt.
 - Human: obtain permission to use a real (de-identified) protocol set; recruit
   2–3 staff for a 30-minute task-based session; record consent and a short demo
-  video; approve the evaluation protocol.
+  video; approve the evaluation protocol. **This is the boundary.**
 - Exit criteria: at least two pilot sessions completed; every answer in the
   session trace resolves to a real passage; measured false-answer rate on the
   pilot question set is recorded with the set itself; no real patient data in

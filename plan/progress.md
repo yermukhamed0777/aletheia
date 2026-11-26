@@ -86,3 +86,47 @@ P0-6 (focus/ARIA), P0-7 (timer/focus restoration), P0-8 (dead keys), P0-9
 (quota-safe upload), P1-1 (raise measured eval floor), P1-2 (browser smoke test),
 P1-3 (pin vendor hashes). No human action is required for P0-1…P0-9 except
 confirmations noted in `plan/roadmap.md`.
+
+## 2026-11-26 — completion session (current)
+
+**Starting state:** the working tree contained uncommitted user work in
+`package.json` (`@playwright/test`), an untracked `package-lock.json`, and an
+interrupted refactor in `src/model.js`: `sleep`, `REMOTE_DOCS`, `seedHistory`,
+`seedGaps`, `SEED_DAYS`, `SEED_TOP` and `liveTop` had been removed while
+`controller.js`/`interface.js`/`model.js` still referenced them, and `save()`
+guarded on an undefined `VIEW.tourSession`.
+
+**Baseline evidence (before fixes):**
+- `node check.mjs` → `CHECK PASSED — bundle built, 39 questions, 22 passages, 329 literal t() keys used of 436 defined strings verified`. The old check could not see the broken runtime paths.
+- `node unit.mjs` (new harness, first run) → `UNIT FAILED — 21 passed, 18 failed`, including `ReferenceError: REMOTE_DOCS is not defined` from `remoteAsk`, failing `stats()`/`chartSVG()`/`analyticsView()`, and 5 failures in the event harness. Recorded verbatim before editing the sources.
+
+**Changed:** completed the refactor in the direction of the user's edits —
+whitelisted persisted state, `backendURL()`, no fabricated analytics, tour-save
+shield; restored `sleep`; made remote evidence self-contained via `sourceOf()`;
+`saveEndpoint()`/`resetAll()` extracted; quota failures mark uploads `failed`;
+HTTPS-only endpoint validation; view copy moved to six new trilingual keys with
+lint guards; focus trap, tabpanel/ARIA fixes, visible tour timeout and focus
+restoration; six dead strings removed (442 → 436); content-free `src/events.js`;
+`harness.mjs`, `unit.mjs` (39 checks), `e2e.mjs` (13 checks); `check.mjs` now
+runs the unit harness; `lint.mjs` guards legacy globals, literals and two
+pinned vendor hashes; CI installs Chromium and gates on unit + e2e; docs
+(`README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `THIRD_PARTY_NOTICES`,
+`WALKTHROUGH.md`, `PILOT_HANDOFF.md`).
+
+**Final verification commands and exact results:**
+- `Remove-Item -Recurse -Force node_modules; npm.cmd ci` → `added 3 packages, and audited 4 packages in 2s`, `found 0 vulnerabilities` (clean install from the committed lockfile).
+- `node unit.mjs` → `UNIT PASSED — 39 passed, 0 failed`.
+- `node check.mjs` → `CHECK PASSED — bundle built, 39 questions, 22 passages, 334 literal t() keys used of 436 defined strings verified` (this run itself printed `UNIT PASSED — 39 passed, 0 failed`).
+- `node lint.mjs` → `LINT PASSED — 10 source files parsed, bundle order, tracked-file, view-copy, legacy-global and 2 pinned vendor hashes verified`.
+- `node eval.mjs` → `dev.json: ans 11/22, idk 8/8, total 19/30`; `fresh.json: ans 8/12, idk 8/8, total 16/20`; `heldout1.json: ans 7/14, idk 8/8, total 15/22`; `EVAL PASSED — 50/72 (69.4%) at threshold 0.6, minimum 0.694` (unchanged regression floor).
+- `node bundle.mjs` → `built 2638 KB`.
+- `Get-FileHash -Algorithm SHA256 dist/index.html` before and after a second `node bundle.mjs` → both `4F587DD38B7885D0F164237D7CCF8160E5FAAB0EACD7288EEF95B015AF7D0642` (deterministic).
+- `node e2e.mjs` → `E2E PASSED — root + subpath, zero console errors`; 13/13 PASS lines, including citation location `Sheet "Dosages 2026", rows 2–4`, zero external requests and `artifacts\walkthrough-ask.png` (113898 bytes).
+- `.\verify.cmd` → all six commands above completed in sequence with exit 0.
+- `curl.exe -sSI --max-time 20 https://aletheia-nine-iota.vercel.app/` → `HTTP/1.1 200 OK`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` (read-only; production still serves the 2026-11-25 build).
+- `npm.cmd ci --dry-run` → `up to date in 293ms`; `npx.cmd --no-install playwright --version` → `Version 1.65.1`; Chromium 1255 present in the local browser cache.
+
+**Open:** P1-1 (optional, retrieval accuracy floor) and all M1/M2/M3 items.
+Human-only: pilot recruitment/consent, real corpus approval, go/no-go, and the
+push/deploy decision. CI has not yet been re-run on the new commit (no push was
+made). No usage, adoption or revenue metric was measured.

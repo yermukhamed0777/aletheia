@@ -10,3 +10,4 @@ dist/
 credentials*.json
 .vercel
 .env*
+artifacts/

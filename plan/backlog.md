@@ -8,7 +8,7 @@ commands and results go in `plan/progress.md`.
 
 | Horizon | ID range | Meaning |
 |---|---|---|
-| Short term | P0-1 … P0-9 | Assistant can do next; one session each. |
+| Short term | P0-1 … P0-12 | Assistant can do next; one session each. |
 | Short term (quality) | P1-1 … P1-3 | Small measured improvements after P0. |
 | Midterm | M1-1 … M2-3 | Real validation, team and product readiness. |
 | Long term | M3-1 … M3-4 | Product shape, posture and commercial model. |
@@ -16,65 +16,91 @@ commands and results go in `plan/progress.md`.
 ## P0 — next actions
 
 - **P0-1 — Remote-answer rendering regression test.** `src/controller.js:51-62`,
-  `src/model.js:2,105-106`, `src/interface.js:78-79`. The crash was fixed by
-  registering synthetic docs in `REMOTE_DOCS`; no automated test covers it.
-  Done when: a mock-`fetch` test drives the remote path, asserts a citation chip
-  and drawer render with a non-empty location, and fails if registration is removed.
+  `src/model.js:129-131`, `src/interface.js:78-79`. **Done 2026-11-26:** the
+  global `REMOTE_DOCS` map was removed (with the interrupted refactor) and
+  replaced by a `source` object carried inside each evidence item; views use
+  `sourceOf()`. `unit.mjs` mocks `fetch`, renders the turn and opens the drawer;
+  `e2e.mjs` repeats it in a real browser. Before: 5 failing unit checks and a
+  `ReferenceError: REMOTE_DOCS is not defined`; after: all pass with location
+  `Sheet "Dosages 2026", rows 2–4`.
 
-- **P0-2 — Execute every source file in the check.** `check.mjs:19-24` loads only
-  `corpus.js`, `retrieval.js`, `strings.js`; `lint.mjs:10-16` syntax-checks all
-  nine but does not boot them. Done when: `node check.mjs` fails on a top-level
-  error injected into any of the six unexecuted files, while the clean run passes.
+- **P0-2 — Execute every source file in the check.** **Done 2026-11-26:**
+  `harness.mjs` evaluates all 10 sources in bundle order with DOM stubs;
+  `check.mjs` runs `unit.mjs`, which exercises the lazy paths (analytics,
+  remote ask, upload, reset). Baseline `UNIT FAILED — 21 passed, 18 failed`
+  with a `ReferenceError`; now 39/39.
 
-- **P0-3 — Harden backend URL validation.** `src/controller.js:149` accepts any
-  `http(s)://` prefix; `src/model.js:79` persists it. Done when: `new URL()`
-  parsing is used, `http:` is rejected except `localhost`, embedded credentials
-  are rejected, and a recorded command shows accepted/rejected cases.
+- **P0-3 — Harden backend URL validation.** **Done 2026-11-26:**
+  `backendURL()` in `src/model.js:75-83` uses `new URL()`; HTTPS accepted,
+  HTTP only for localhost/127.0.0.1/[::1], credentials, fragments and
+  non-HTTP schemes rejected. `saveEndpoint()` uses the same validator on load
+  and save; 8 unit assertions recorded.
 
-- **P0-4 — Move hard-coded UI copy into `strings.js`.** `src/interface.js:86,163,224,228,290`,
-  `src/pages.js:80`. Violates `CLAUDE.md:12`. Done when: no view contains those
-  literals, all new keys are trilingual, and lint guards the patterns.
+- **P0-4 — Move hard-coded UI copy into `strings.js`.** **Done 2026-11-26:**
+  added `st.ocr`, `unit.ms`, `qs.key`, `qs.esc`, `tour.timeup`, `err.storage`;
+  keycaps now render ⌘ on Apple devices via `kbdMod()`. `lint.mjs` fails on
+  the old literals. 436 defined strings, 334 literal `t()` keys used.
 
-- **P0-5 — Verify Vercel security headers in production.** `vercel.json:6-14`
-  added headers; no live check yet. Done when: a read-only header request to the
-  production URL shows all three headers and the page still loads.
+- **P0-5 — Verify Vercel security headers in production.** **Done 2026-11-26:**
+  `curl.exe -sSI https://aletheia-nine-iota.vercel.app/` → `HTTP/1.1 200 OK`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
+  `X-Frame-Options: DENY`. Production still serves the pre-fix build
+  (Last-Modified 2026-11-25); no deploy was made.
 
-- **P0-6 — Focus and ARIA repair in overlays.** `src/pages.js:39,52,63,80,87`
-  (`aria-modal` without focus trap), `src/pages.js:81` (no
-  `aria-activedescendant`), `src/interface.js:244` (tabs without `tabpanel` or
-  arrow keys). Done when: a keyboard-only pass can enter, operate and leave each
-  overlay without reaching background controls.
+- **P0-6 — Focus and ARIA repair in overlays.** **Done 2026-11-26:** Tab trap
+  in `#ov`, `aria-activedescendant` + option ids in quick find, `tabpanel`
+  wrapper and arrow-key navigation on gap tabs. Not claimed as a full WCAG
+  audit; contrast remains an open risk in `strategy.md`.
 
-- **P0-7 — Fix the cosmetic tour timer and focus restoration.** `src/pages.js:108`
-  counts down to 0:00 with no consumer; `src/controller.js:102` deliberately
-  skips focus restoration for `src`. Done when: reaching 0:00 produces a visible
-  state change and closing the citation drawer returns focus to its trigger.
+- **P0-7 — Fix the cosmetic tour timer and focus restoration.** **Done
+  2026-11-26:** `tourSeconds()`/`clockText()` drive the clock; reaching 0
+  swaps to `tour.timeup` and a warning class. Citation triggers are now
+  recorded in `lastFocus`, so closing the drawer restores focus.
 
-- **P0-8 — Delete or justify dead UI keys.** `src/strings.js:363,368,708,713,718,1578`
-  are defined but never rendered; `an.sample` claims sample activity that
-  `src/model.js:71-73` does not create. Done when: each key is either used or
-  removed, and `node check.mjs` still passes with 436 → N defined strings recorded.
+- **P0-8 — Delete or justify dead UI keys.** **Done 2026-11-26:** removed
+  `lp.pv.note`, `lp.pv.open`, `dash.demo`, `dash.demo.sub`, `dash.idk` and
+  the misleading `an.sample`. 442 → 436 defined strings; the other 18 unused
+  keys are reached through dynamic prefixes (`mode.`, `crit.`, `act.*`, etc.).
 
-- **P0-9 — Quota-safe upload state.** `src/model.js:186,388-393` enforces a
-  30 MiB cap but a `localStorage` quota failure only toasts while state can say
-  `processed`. Done when: a failed `LS.set` marks the upload `failed` with a
-  reason code and the library shows it.
+- **P0-9 — Quota-safe upload state.** **Done 2026-11-26:** a failed `LS.set`
+  now marks a processed upload `failed` with `error: 'storage'` and clears its
+  chunks before rebuilding the index; `err.storage` explains it in all three
+  languages. Two unit assertions cover it.
+
+- **P0-10 — Complete the interrupted state/analytics refactor.** New.
+  `src/model.js` was mid-edit: `sleep`, seed helpers, `REMOTE_DOCS` and
+  `VIEW.tourSession` had been removed while still referenced, and `stats()` /
+  `chartSVG()` / `analyticsView()` used deleted seed constants. **Done
+  2026-11-26:** all references reconciled; analytics are built only from real
+  `STATE.history`; persisted keys are whitelisted; tour overrides are shielded
+  from `save()` and onboarding is persisted before the tour starts.
+
+- **P0-11 — Content-free pilot event harness.** New. **Done 2026-11-26:**
+  `src/events.js` exposes `track()` and `EVENT_SNAPSHOT()` over a 9-name
+  allowlist; no text payload, no persistence, no network. Unit assertions
+  cover allowlisting, integer-only counts and zero network calls.
+
+- **P0-12 — CV-ready documentation.** New. **Done 2026-11-26:** README verify
+  and backup/restore sections, `WALKTHROUGH.md`, `PILOT_HANDOFF.md`, updated
+  CONTRIBUTING/CHANGELOG/THIRD_PARTY_NOTICES.
 
 ## P1 — measured quality
 
 - **P1-1 — Improve validation accuracy above the measured floor.** `eval.mjs:14`,
   `validation/*.json`. Baseline 50/72 (69.4%), ans 26/48, idk 24/24.
-  Done when: a retrieval-only change raises measured accuracy, per-file numbers
-  are recorded, and `EVAL_MIN` is updated to the new measured value only.
+  Open: optional next; requires a retrieval-only change that raises the measured
+  score before `EVAL_MIN` may change.
 
-- **P1-2 — Add a browser smoke test.** No Playwright/jsdom dependency today;
-  `check.mjs:56-60` tests only pure retrieval. Done when: CI opens the built
-  page, asks a metformin question, opens a citation and records zero console
-  errors, on both Ubuntu and Windows runners.
+- **P1-2 — Add a browser smoke test.** **Done 2026-11-26:** `e2e.mjs` serves
+  `dist/index.html` locally, drives landing → ask → citation → drawer → close,
+  quick find, a root and a `/sub/` variant, captures
+  `artifacts/walkthrough-ask.png`, and asserts zero console errors and zero
+  external requests. 13/13 checks passed. Ubuntu CI runs it; Windows runner
+  remains open under M2-3.
 
-- **P1-3 — Pin and verify vendored pdf.js.** `vendor/pdf.min.mjs:23-24`,
-  `bundle.mjs:4`, `THIRD_PARTY_NOTICES`. Done when: the SHA-256 of both vendor
-  files is recorded in `THIRD_PARTY_NOTICES` and lint fails on a mismatch.
+- **P1-3 — Pin and verify vendored pdf.js.** **Done 2026-11-26:** both SHA-256
+  values recorded in `THIRD_PARTY_NOTICES` and checked by `lint.mjs` on every
+  run; clean run reports 2 pinned hashes verified.
 
 ## M1 — field validation
 
