@@ -173,3 +173,30 @@ question text and uploaded passages persist unencrypted in `localStorage`;
 LLM/embeddings/OCR are not connected; the Vercel project is tied to a personal
 account slug; GitHub Actions v4 emit a non-blocking Node 20 deprecation
 annotation. None of these is hidden by this report.
+
+## 11. Post-authorization release verification
+
+After explicit authorization, `git push origin main` moved
+`9ca85e9..3e69de9 main -> main`.
+
+- CI run `45775110231` (job `139756776408`): **success in 34s**. Every step
+  passed: install dev dependencies, install Chromium, smoke check (with unit),
+  source lint, validation eval, fast unit harness, data-layer parsers, build,
+  browser smoke (root + subpath), workflow QA and artifact upload. Only
+  annotation: actions v4 target Node 20 and are forced to Node 24.
+- `vercel ls --prod --json` → first deployment `githubCommitSha`
+  `3e69de93686fa130b1098b86ac142bbff7505d53`, `state: READY`, URL
+  `aletheia-hvhmc4qv3-erm1ham3d2204-2491.vercel.app`.
+- `vercel inspect` → deployment id `dpl_BRLeARkC9QKhq9fEVRg4toFU4KpV`,
+  `target: production`, `readyState: READY`, build `bld_elvovf2wv`.
+- `curl.exe -sSI https://aletheia-nine-iota.vercel.app/` → `HTTP/1.1 200 OK`,
+  `Content-Length: 2743574`, `Etag: "1fa86cfc65f862052c1672ccfe835aac"`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
+  `X-Frame-Options: DENY`.
+- Downloaded live HTML: contains `[\s\S]` and contains no `[\VIEW]`, confirming
+  the parser fix is the code actually served.
+
+The release candidate commit `3e69de9` is therefore the SHA verified in
+production. Documentation-only commits pushed afterwards rebuild the same
+static artefact and may change the reported deployment id; the source of the
+release candidate does not change.
