@@ -196,18 +196,43 @@ After explicit authorization, `git push origin main` moved
 - Downloaded live HTML: contains `[\s\S]` and contains no `[\VIEW]`, confirming
   the parser fix is the code actually served.
 
-The release candidate commit `3e69de9` is therefore the SHA verified in
-production. Documentation-only commits pushed afterwards rebuild the same
-static artefact and may change the reported deployment id; the source of the
-release candidate does not change.
-
 ## 12. Subsequent retrieval evaluation (research closeout)
 
-After this release report, the P1-1 retrieval task was completed and is
-documented in **`RESEARCH_REPORT.md`**. The measured gate moved from 50/72 to
-67/72 (answers 43/48, expected abstentions unchanged at 24/24) via a pruned
-non-evidence stopword set plus a curated refusal layer; the retrieval threshold
-remained 0.6 and no expected answer was edited. The full suite was re-run:
-unit 48/48, data 19/19, check passed, lint passed, eval 67/72 with
-`EVAL_MIN=0.9305`, bundle 2639 KB, e2e 13/13, QA 24/24. This work is a research
-prototype change, not a clinical validation or a new product release.
+After this release report, the P1-1 retrieval task was completed in commit
+`3f27fc2` and documented in `RESEARCH_REPORT.md`. The measured gate moved from
+50/72 to 67/72 (answers 43/48, expected abstentions unchanged at 24/24) via a
+pruned non-evidence stopword set plus a curated refusal layer; the retrieval
+threshold remained 0.6 and no expected answer was edited. The full suite was
+re-run: unit 48/48, data 19/19, check passed, lint passed, eval 67/72 with
+`EVAL_MIN=0.9305`, bundle 2639 KB, e2e 13/13, QA 24/24. This is a research
+prototype benchmark on the fictional Asklepia Diagnostics corpus, not clinical
+validation and not a new product release. Section 13 records independent
+verification that production serves this code.
+
+## 13. Retrieval benchmark deployment verification (post-report)
+
+Independently verified on 2026-11-28 (UTC) against
+`https://aletheia-nine-iota.vercel.app/`. Production serves the retrieval
+behaviour introduced in `3f27fc2`. The commit attribution is **artefact-based**,
+not a Vercel API deployment record: the local `VERCEL_OIDC_TOKEN` returned HTTP
+403 from `api.vercel.com/v6/deployments`, and no authenticated Vercel CLI
+session was available. Commands and exact results:
+
+| Command | Result |
+|---|---|
+| `curl.exe -sS -D - -o "$env:TEMP\opencode\aletheia-live.html" https://aletheia-nine-iota.vercel.app/` | `HTTP/1.1 200 OK`, `Content-Length: 2744904`, `Etag: "9f51aab4063d55f6d08e0dfa87b6bf02"`, `Last-Modified: Thu, 26 Nov 2026 09:07:42 GMT`, `X-Vercel-Cache: HIT`, `X-Vercel-Id: sfo1::z4s77-1795860498257-25a82036e1cd`, `Date: Sat, 28 Nov 2026 10:08:18 GMT` |
+| `git archive -o <tmp>\aletheia-3f27fc2.tar 3f27fc2`; `tar.exe -xf <tmp>\aletheia-3f27fc2.tar -C <tmp>\aletheia-3f27fc2`; LF-normalise the Windows-checkout text files; `node <tmp>\aletheia-3f27fc2\bundle.mjs`; `Get-FileHash` on both HTML files | `built 2638 KB`; live HTML and the build of `3f27fc2` both have SHA-256 `3774871868ABB2A5009D148B3E9BB0DC74418134D4B1DA56379412624B329589`. `Last-Modified` is 93 s after commit `3f27fc2` (17:06:09 +0800 = 09:06:09 UTC). |
+| Node string probe of the downloaded HTML | Pruned `STOP` additions, `связаться`/`контакты → контакт` canonical mapping, curated `matchCurated(...abstain)` safety layer and `[\s\S]` all present; `[\VIEW]` absent. |
+| Playwright against the live URL (temporary script outside the repo) | `HTTP 200` and `LIVE BEHAVIOUR PASSED — 4/4 checks`, zero browser errors: `How often is renal function checked on vancomycin?` → answer contains `48` (a baseline stopword failure); `What is the metformin dose for children?` → `Cannot verify`; `Как связаться с хелпдеском?` → `Cannot verify` with no `08:00`; `When is the lab helpdesk open?` → `08:00` control answer. |
+| `node check.mjs` (documentation gate after review) | `CHECK PASSED — bundle built, 39 questions, 22 passages, 334 literal t() keys used of 436 defined strings verified` (UNIT 48/48, DATA 19/19) |
+| `cmd /c verify.cmd` (full gate after review) | `EVAL PASSED — 67/72 (93.1%) at threshold 0.6, minimum 0.9305`; `E2E PASSED — root + subpath, zero console errors`; `QA PASSED — 24 passed, 0 failed`; all steps exited 0. |
+
+The 67/72 result (93.1% at threshold 0.6, `EVAL_MIN=0.9305`) is a research
+prototype benchmark on the **fictional Asklepia Diagnostics corpus**, not
+clinical validation: no real-user validation, no agreed accuracy bar, no access
+control or encryption at rest, and no CSP. The parser-fix release candidate
+`3e69de9` remains the SHA for the earlier baseline; the retrieval-improved
+deployment is a separate research artefact. Documentation-only commits pushed
+after the `3e69de9` verification and before the retrieval change rebuilt the
+same static artefact and may have changed the reported deployment id; the
+source of that release candidate did not change.

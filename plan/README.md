@@ -13,7 +13,13 @@ it can be reviewed in a diff.
 
 ## Status snapshot
 
-- Stage: static, browser-only demonstration; public repo, deployed on Vercel (production still serves the 2026-11-25 build); no field validation yet. Code and docs are complete locally up to the human pilot boundary.
+- Stage: static, browser-only demonstration; public repo, deployed on Vercel
+  (production serves the retrieval build of `3f27fc2`; the later docs-only
+  commit `465b858` rebuilds the same static artefact); no field validation yet.
+  Code and docs are complete locally up to the human pilot boundary. **The
+  67/72 (93.1%) evaluation result is a research prototype benchmark on the
+  fictional Asklepia Diagnostics corpus; it does not constitute clinical
+  validation.**
 - Latest measured numbers: 39 questions / 22 passages / 436 defined strings / 334 used keys; unit 48/48; data 19/19; e2e 13/13; QA 24/24; demo 7 identical artifact hashes; check passes; lint passes 10 files and 2 pinned vendor hashes; eval 67/72 (93.1%, original baseline 50/72) with 24/24 abstentions; bundle 2639 KB; audit 0 vulnerabilities. Full evidence in `progress.md`, `RELEASE_REPORT.md` and `RESEARCH_REPORT.md`.
 - Next action: **human only** — run the pilot in `PILOT_HANDOFF.md`; **optional next** — M1-1 audit CSV, M2-3 Windows CI. P1-1 is done; remaining retrieval limitations are in `RESEARCH_REPORT.md`. Closeout classification: **DEMO READY**, not clinically validated.
 

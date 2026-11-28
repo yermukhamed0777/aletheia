@@ -13,7 +13,10 @@ every answer carries a passage locator, and the demo is honest about what is
 real, curated and simulated.
 
 The current artefact is a free, static, browser-only demonstration. It proves
-the promise cheaply; it is not a clinical product or a medical device.
+the promise cheaply; it is not a clinical product or a medical device. **The
+67/72 (93.1%) evaluation result, achieved via retrieval improvements documented
+in `RESEARCH_REPORT.md`, is a research prototype benchmark on the fictional
+Asklepia Diagnostics corpus; it does not constitute clinical validation.**
 
 ## Users
 
